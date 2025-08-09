@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Interactive World Clock</title>
+  <style>
+    :root{
+      --bg:#0b1020;--panel:#111831;--ink:#eaf0ff;--muted:#9fb0d3;--accent:#6aa6ff;--ring:#24335e;
+      --morning:linear-gradient(135deg,#FFE8A3,#FFCB69);
+      --afternoon:linear-gradient(135deg,#CDEBFF,#89C2FF);
+      --evening:linear-gradient(135deg,#FFB4B4,#F7A1D1);
+      --night:linear-gradient(135deg,#1E2758,#0B1020);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:var(--ink);
+      background:
+        radial-gradient(1000px 800px at 85% -10%, #19305f55,transparent 60%),
+        radial-gradient(800px 700px at -15% 110%, #22407e55,transparent 60%),
+        var(--bg);
+    }
+    .wrap{max-width:1100px;margin:0 auto;padding:24px 14px 40px}
+    header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;justify-content:space-between;margin-bottom:12px}
+    .title{font-weight:800;letter-spacing:.3px;font-size:clamp(20px,4vw,32px);display:flex;align-items:center;gap:10px}
+    .logo{font-size:28px}
+
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .control,select,input[type="text"]{
+      appearance:none;background:var(--panel);color:var(--ink);
+      border:1px solid var(--ring);border-radius:12px;padding:10px 12px;font-size:14px;outline:none
+    }
+    select:focus,input[type="text"]:focus{border-color:var(--accent)}
+    button{
+      background:var(--accent);color:#06122c;border:0;border-radius:12px;
+      padding:10px 14px;font-weight:700;cursor:pointer;font-size:14px;
+      transition:transform .05s ease,filter .1s ease
+    }
+    button:hover{filter:brightness(1.06)}
+    button:active{transform:translateY(1px)}
+    .muted{color:var(--muted)}
+    .toggle{display:inline-flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--ring);border-radius:999px;padding:6px 10px}
+    .toggle input{display:none}
+    .toggle .pill{width:48px;height:24px;background:#0d1530;border:1px solid var(--ring);border-radius:999px;position:relative}
+    .toggle .ball{position:absolute;top:50%;left:2px;transform:translate(0,-50%);width:20px;height:20px;border-radius:50%;background:var(--accent);transition:left .25s cubic-bezier(.2,.8,.2,1)}
+    .toggle input:checked + .pill .ball{left:26px}
+
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+    .card{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--ring);background:#0b1020;min-height:148px;display:grid;grid-template-rows:auto 1fr;isolation:isolate}
+    .card::before{content:"";position:absolute;inset:0;background:var(--night);opacity:.92;z-index:0;transition:opacity .3s ease,filter .3s ease}
+    .card[data-pod="morning"]::before{background:var(--morning);opacity:.97}
+    .card[data-pod="afternoon"]::before{background:var(--afternoon);opacity:.97}
+    .card[data-pod="evening"]::before{background:var(--evening);opacity:.97}
+    .card[data-pod="night"]::before{background:var(--night);opacity:.9}
+    .content{position:relative;z-index:1;padding:14px;display:grid;gap:8px}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .city{font-weight:800;letter-spacing:.2px;font-size:16px}
+    /* Improve city name readability for day periods */
+    .card[data-pod="morning"] .city,
+    .card[data-pod="afternoon"] .city,
+    .card[data-pod="evening"] .city {
+      color: #06122c;
+      text-shadow: 0 1px 6px #fff8, 0 0px 1px #fff8;
+      /* fallback for dark backgrounds */
+    }
+    .emoji{font-size:20px}
+    .time{font-variant-numeric:tabular-nums;font-size:34px;line-height:1.1;font-weight:800}
+    /* Improve time readability for day periods */
+    .card[data-pod="morning"] .time,
+    .card[data-pod="afternoon"] .time,
+    .card[data-pod="evening"] .time {
+      color: #06122c;
+      text-shadow: 0 1px 6px #fff8, 0 0px 1px #fff8;
+      /* fallback for dark backgrounds */
+    }
+    .date{font-size:12px;color:#0a0a0a;mix-blend-mode:overlay;font-weight:700}
+    .chip{display:inline-flex;align-items:center;gap=6px;background:#ffffff33;color:#06122c;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+    .remove{background:#00000033;backdrop-filter:blur(2px);color:white;border:1px solid #ffffff55;padding:6px 10px;border-radius:10px;font-size:12px}
+
+    footer{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
+
+    .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#101a36;border:1px solid #33457a;color:#eaf0ff;padding:8px 12px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s ease}
+    .toast.show{opacity:1}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title"><span class="logo">🕰️</span> Interactive World Clock</div>
+      <div class="toolbar">
+        <label class="toggle" title="Toggle 12/24-hour">
+          <span class="muted">12h</span>
+          <input id="fmtToggle" type="checkbox" aria-label="24-hour format toggle"/>
+          <span class="pill"><span class="ball"></span></span>
+          <span class="muted">24h</span>
+        </label>
+        <span class="muted" aria-hidden>•</span>
+
+        <!-- Quick presets -->
+        <select id="citySelect" title="Quick add popular cities">
+          <option value="Europe/Berlin">Berlin (Europe/Berlin)</option>
+          <option value="Europe/London">London (Europe/London)</option>
+          <option value="UTC">UTC</option>
+          <option value="America/New_York">New York (America/New_York)</option>
+          <option value="America/Los_Angeles">Los Angeles (America/Los_Angeles)</option>
+          <option value="America/Sao_Paulo">São Paulo (America/Sao_Paulo)</option>
+          <option value="Africa/Johannesburg">Johannesburg (Africa/Johannesburg)</option>
+          <option value="Asia/Dubai">Dubai (Asia/Dubai)</option>
+          <option value="Asia/Kolkata">Mumbai (Asia/Kolkata)</option>
+          <option value="Asia/Shanghai">Shanghai (Asia/Shanghai)</option>
+          <option value="Asia/Tokyo">Tokyo (Asia/Tokyo)</option>
+          <option value="Australia/Sydney">Sydney (Australia/Sydney)</option>
+        </select>
+        <button id="addPreset">Add City</button>
+
+        <!-- Global list via Intl.supportedValuesOf('timeZone') -->
+        <input id="zoneSearch" class="control" list="allZones" placeholder="Search all time zones (e.g. Europe/Paris)"/>
+        <datalist id="allZones"></datalist>
+        <button id="addFromAll" title="Add from the global list">Add From List</button>
+
+        <!-- Free-form entry -->
+        <input id="customTz" class="control" type="text" placeholder="Custom IANA TZ (e.g. Pacific/Auckland)"/>
+        <button id="addCustom" title="Add custom timezone">Add Custom</button>
+
+        <!-- Add everything (careful) -->
+        <button id="addAllTz" title="Add all available time zones (hundreds)">Add ALL</button>
+      </div>
+    </header>
+
+    <main class="card-grid" id="grid" aria-live="polite"></main>
+
+    <footer>
+      No external APIs needed. Use the typeahead to search the full IANA list supported by your browser.
+      “Add ALL” inserts every supported zone (may be slow).
+    </footer>
+  </div>
+
+  <template id="cardTemplate">
+    <article class="card" data-pod="night">
+      <div class="content">
+        <div class="row">
+          <div>
+            <div class="city"></div>
+            <div class="chip"><span class="emoji">🌙</span><span class="pod">Night</span></div>
+          </div>
+          <button class="remove" title="Remove">Remove</button>
+        </div>
+        <div class="time">00:00:00</div>
+        <div class="date">—</div>
+      </div>
+    </article>
+  </template>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ---------- Utilities ----------
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+    const $  = (sel, root=document) => root.querySelector(sel);
+
+    const PARTS = [
+      { key:'morning',   label:'Morning',   emoji:'🌅', start:5,  end:12 }, // 05:00 - 11:59
+      { key:'afternoon', label:'Afternoon', emoji:'☀️', start:12, end:17 }, // 12:00 - 16:59
+      { key:'evening',   label:'Evening',   emoji:'🌇', start:17, end:21 }, // 17:00 - 20:59
+      { key:'night',     label:'Night',     emoji:'🌙', start:21, end:24 }, // 21:00 - 23:59
+      { key:'night',     label:'Night',     emoji:'🌙', start:0,  end:5  }, // 00:00 - 04:59
+    ];
+    const STORAGE_KEY='iwc:cities';
+    const STORAGE_FMT='iwc:fmt24';
+
+    function partOfDay(h){ return PARTS.find(p => h>=p.start && h<p.end) || PARTS[3]; }
+    function tzDisplayName(tz){ if(!tz) return '—'; const parts=tz.split('/'); return decodeURIComponent(parts.at(-1).replace(/_/g,' ')); }
+    function isValidTimeZone(tz){
+      try{ new Intl.DateTimeFormat('en-US',{timeZone:tz}).format(); return true; }catch(_){ return false; }
+    }
+    function formatTime(date,tz,use24){
+      return new Intl.DateTimeFormat(undefined,{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:!use24}).format(date);
+    }
+    function formatDate(date,tz){
+      return new Intl.DateTimeFormat(undefined,{timeZone:tz,weekday:'short',year:'numeric',month:'short',day:'numeric'}).format(date);
+    }
+    function getAllTimeZones(){
+      if(typeof Intl.supportedValuesOf==='function'){
+        const vals=Intl.supportedValuesOf('timeZone');
+        if(Array.isArray(vals) && vals.length) return vals;
+      }
+      // Fallback compact set (kept small to avoid layout explosions on very old browsers)
+      return [
+        'UTC','Europe/Berlin','Europe/London','Europe/Paris','Europe/Madrid','Europe/Rome','Europe/Warsaw','Europe/Athens','Europe/Moscow',
+        'Africa/Cairo','Africa/Johannesburg','Africa/Nairobi','Africa/Lagos','Africa/Casablanca',
+        'Asia/Dubai','Asia/Jerusalem','Asia/Tehran','Asia/Karachi','Asia/Kolkata','Asia/Dhaka','Asia/Bangkok','Asia/Jakarta','Asia/Shanghai','Asia/Hong_Kong','Asia/Taipei','Asia/Seoul','Asia/Tokyo','Asia/Singapore',
+        'Australia/Perth','Australia/Adelaide','Australia/Sydney','Pacific/Auckland','Pacific/Honolulu',
+        'America/Anchorage','America/Los_Angeles','America/Denver','America/Chicago','America/New_York','America/Toronto','America/Mexico_City','America/Bogota','America/Lima','America/Santiago','America/Caracas','America/Sao_Paulo','America/Argentina/Buenos_Aires'
+      ];
+    }
+
+    // ---------- State ----------
+    let cities = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+    if(!Array.isArray(cities)) cities=[];
+    if(cities.length===0) cities=['Europe/Berlin','UTC','America/New_York','Asia/Tokyo'];
+
+    let fmt24 = localStorage.getItem(STORAGE_FMT);
+    fmt24 = (fmt24===null)? true : (fmt24==='true');
+
+    // ---------- DOM refs ----------
+    const grid       = $('#grid');
+    const template   = $('#cardTemplate');
+    const fmtToggle  = $('#fmtToggle');
+    const citySelect = $('#citySelect');
+    const addPreset  = $('#addPreset');
+    const addCustom  = $('#addCustom');
+    const customTz   = $('#customTz');
+    const zoneSearch = $('#zoneSearch');
+    const addFromAll = $('#addFromAll');
+    const allZonesDL = $('#allZones');
+    const addAllTz   = $('#addAllTz');
+    const toastEl    = $('#toast');
+
+    fmtToggle.checked = fmt24;
+
+    // ---------- Toast ----------
+    let toastTimer=null;
+    function toast(msg,ms=1500){
+      toastEl.textContent=msg;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer=setTimeout(()=>toastEl.classList.remove('show'),ms);
+    }
+
+    // ---------- Datalist ----------
+    const ALL_ZONES = getAllTimeZones();
+    (function populateDatalist(){
+      const frag = document.createDocumentFragment();
+      ALL_ZONES.forEach(z=>{ const o=document.createElement('option'); o.value=z; frag.appendChild(o); });
+      allZonesDL.innerHTML='';
+      allZonesDL.appendChild(frag);
+    })();
+
+    // ---------- Render ----------
+    function render(){
+      grid.innerHTML='';
+      cities.forEach(tz => grid.appendChild(makeCard(tz)));
+      // ensure the layout paints quickly before first tick
+      requestAnimationFrame(()=>tick());
+    }
+
+    function makeCard(tz){
+      const node = template.content.firstElementChild.cloneNode(true);
+      $('.city',node).textContent=tzDisplayName(tz);
+      $('.remove',node).addEventListener('click',()=>{
+        cities=cities.filter(c=>c!==tz);
+        persist(); render(); toast(`Removed ${tz}`);
+      });
+      node.dataset.tz=tz;
+      updateCard(node);
+      return node;
+    }
+
+    function updateCard(node){
+      const tz=node.dataset.tz;
+      const now=new Date();
+      // derive hour in that tz
+      const parts=new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'numeric',hour12:false}).formatToParts(now);
+      const hour=Number((parts.find(p=>p.type==='hour')||{value:'0'}).value);
+      const pod=partOfDay(hour);
+
+      $('.time',node).textContent=formatTime(now,tz,fmtToggle.checked);
+      $('.date',node).textContent=formatDate(now,tz);
+      $('.pod',node).textContent=pod.label;
+      $('.emoji',node).textContent=pod.emoji;
+      node.dataset.pod=pod.key;
+    }
+
+    function tick(){ $$('.card',grid).forEach(updateCard); }
+    function persist(){
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(cities));
+      localStorage.setItem(STORAGE_FMT,String(fmtToggle.checked));
+    }
+    function addCity(tz){
+      if(!tz) return;
+      if(!isValidTimeZone(tz)) { toast('Invalid IANA timezone'); return; }
+      if(!cities.includes(tz)){ cities.push(tz); persist(); render(); toast(`Added ${tz}`); }
+      else toast('Already added');
+    }
+
+    // ---------- Events ----------
+    addPreset.addEventListener('click',()=> addCity(citySelect.value));
+
+    addCustom.addEventListener('click',()=>{
+      const tz=customTz.value.trim();
+      addCity(tz); customTz.value='';
+    });
+    customTz.addEventListener('keydown',(e)=>{ if(e.key==='Enter') addCustom.click(); });
+
+    addFromAll.addEventListener('click',()=>{
+      const tz=zoneSearch.value.trim();
+      addCity(tz); zoneSearch.value='';
+    });
+    zoneSearch.addEventListener('keydown',(e)=>{ if(e.key==='Enter') addFromAll.click(); });
+
+    fmtToggle.addEventListener('change',()=>{ persist(); tick(); });
+
+    addAllTz.addEventListener('click',()=>{
+      const count=ALL_ZONES.length;
+      const ok=confirm(`This will add ${count} time zones and may be slow. Continue?`);
+      if(!ok) return;
+      const set=new Set(cities);
+      ALL_ZONES.forEach(z=>{ if(!set.has(z)) cities.push(z); });
+      persist(); render(); toast(`Added ${count} zones`);
+    });
+
+    // ---------- Init ----------
+    render();
+    setInterval(tick,1000);
+
+    // ---------- Mini Test Suite (console) ----------
+    (function runTests(){
+      const results=[];
+      function assert(name, cond){ results.push([name, !!cond]); if(!cond) console.error('❌',name); else console.log('✅',name); }
+
+      // Test 1: timezone validation
+      assert('Valid TZ: UTC', isValidTimeZone('UTC')===true);
+      assert('Invalid TZ rejected', isValidTimeZone('Europe/NotARealCity')===false);
+
+      // Test 2: partOfDay boundaries (deterministic checks)
+      assert('05→morning', partOfDay(5).key==='morning');
+      assert('11→morning', partOfDay(11).key==='morning');
+      assert('12→afternoon', partOfDay(12).key==='afternoon');
+      assert('16→afternoon', partOfDay(16).key==='afternoon');
+      assert('17→evening', partOfDay(17).key==='evening');
+      assert('20→evening', partOfDay(20).key==='evening');
+      assert('21→night', partOfDay(21).key==='night');
+      assert('0→night',  partOfDay(0).key==='night');
+      assert('4→night',  partOfDay(4).key==='night');
+
+      // Test 3: format functions return strings
+      const now=new Date();
+      const t12= formatTime(now,'UTC',false);
+      const t24= formatTime(now,'UTC',true);
+      assert('formatTime 12/24 are strings', (typeof t12==='string' && typeof t24==='string'));
+
+      // Test 4: datalist filled (unless ancient browser)
+      const expectAll=getAllTimeZones();
+      assert('Datalist populated', $('#allZones').children.length===expectAll.length || typeof Intl.supportedValuesOf!=='function');
+
+      // Summary toast
+      const failed = results.filter(([_,ok])=>!ok).length;
+      if(failed===0) toast('Self-tests passed');
+      else toast(`${failed} self-test(s) failed — see console`, 2500);
+    })();
+
+  </script>
+</body>
+</html>
