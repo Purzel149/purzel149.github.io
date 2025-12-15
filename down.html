@@ -310,6 +310,18 @@
             "Gbit/s": 1000000000 / 8,
         };
 
+        // Neue Overhead-Profile (geschätzte Protokoll-Overheads in Prozent)
+        const OVERHEAD_PROFILES = [
+            { key: 'none', label: 'Kein Overhead (theoretisch)', percent: 0 },
+            { key: 'generic', label: 'Generisch (10%)', percent: 10 },
+            { key: 'http', label: 'HTTP (7%)', percent: 7 },
+            { key: 'https', label: 'HTTPS/TLS (12%)', percent: 12 },
+            { key: 'smb', label: 'SMB/CIFS (20%)', percent: 20 },
+            { key: 'ftp', label: 'FTP (8%)', percent: 8 },
+            { key: 'sftp', label: 'SFTP/SSH (14%)', percent: 14 },
+            { key: 'vpn', label: 'VPN (15%)', percent: 15 },
+        ];
+
         function formatTime(totalSeconds) {
             if (totalSeconds <= 0 || !isFinite(totalSeconds)) {
                 return "Invalid";
@@ -347,8 +359,10 @@
             const [fileSizeUnit, setFileSizeUnit] = useState("GB");
             const [speed, setSpeed] = useState("");
             const [speedUnit, setSpeedUnit] = useState("Mbit/s");
-            const [includeOverhead, setIncludeOverhead] = useState(false);
+            // Ersetze Toggle durch Dropdown-Profil
+            const [overheadProfile, setOverheadProfile] = useState('generic');
             const [darkMode, setDarkMode] = useState(false);
+            const [showOverheadInfo, setShowOverheadInfo] = useState(false);
 
             useEffect(() => {
                 const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -366,9 +380,10 @@
                 const fileSizeBytes = fileSizeNum * (FILE_SIZE_UNITS[fileSizeUnit] || 1);
                 let speedBytesPerSec = speedNum * (SPEED_UNITS[speedUnit] || 1);
 
-                if (includeOverhead) {
-                    speedBytesPerSec *= 0.9;
-                }
+                // Overhead anwenden
+                const profile = OVERHEAD_PROFILES.find(p => p.key === overheadProfile) || OVERHEAD_PROFILES[0];
+                const overheadFactor = 1 - (profile.percent / 100);
+                speedBytesPerSec *= overheadFactor;
 
                 const secondsTotal = fileSizeBytes / speedBytesPerSec;
                 const formattedTime = formatTime(secondsTotal);
@@ -380,8 +395,10 @@
                     formatted: formattedTime,
                     finishTime,
                     mbPerSec,
+                    overheadPercent: profile.percent,
+                    overheadLabel: profile.label,
                 };
-            }, [fileSize, fileSizeUnit, speed, speedUnit, includeOverhead]);
+            }, [fileSize, fileSizeUnit, speed, speedUnit, overheadProfile]);
 
             const handlePreset = (preset) => {
                 setFileSize(preset.size.toString());
@@ -415,24 +432,66 @@
 
                         {/* Main Card */}
                         <div className="glass-effect rounded-2xl shadow-2xl p-6 sm:p-8 mb-6">
-                            {/* Overhead Toggle */}
-                            <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-                                <div>
-                                    <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
-                                        Reale Bedingungen
-                                    </h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                                        10% Protokoll-Overhead berücksichtigen
-                                    </p>
+                            {/* Overhead Dropdown */}
+                            <div className="mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
+                                                Reale Bedingungen
+                                            </h3>
+                                            <button
+                                                onClick={() => setShowOverheadInfo(!showOverheadInfo)}
+                                                className="flex items-center gap-1 px-2 py-1 border-2 border-purple-600 dark:border-purple-400 rounded-full text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                                                aria-label="Info zum Protokoll-Overhead"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span className="text-xs font-medium">Was ist das?</span>
+                                            </button>
+                                        </div>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            Protokoll-Overhead berücksichtigen
+                                        </p>
+                                    </div>
+                                    <div className="input-group w-full max-w-xs">
+                                        <select
+                                            value={overheadProfile}
+                                            onChange={(e) => setOverheadProfile(e.target.value)}
+                                            className="select-base w-full"
+                                            aria-label="Overhead-Profil"
+                                        >
+                                            {OVERHEAD_PROFILES.map(p => (
+                                                <option key={p.key} value={p.key}>{p.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
-                                <label className="toggle-switch">
-                                    <input
-                                        type="checkbox"
-                                        checked={includeOverhead}
-                                        onChange={(e) => setIncludeOverhead(e.target.checked)}
-                                    />
-                                    <span className="toggle-slider"></span>
-                                </label>
+                                
+                                {/* Info-Box mit Erklärung */}
+                                {showOverheadInfo && (
+                                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                        <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
+                                            📡 Was ist Protokoll-Overhead?
+                                        </h4>
+                                        <p className="text-sm text-blue-800 dark:text-blue-300 mb-3">
+                                            Bei jeder Datenübertragung werden zusätzlich zur eigentlichen Datei auch Verwaltungsinformationen (Header, Prüfsummen, Bestätigungen) übertragen. Dieser "Overhead" reduziert die effektive Geschwindigkeit.
+                                        </p>
+                                        <div className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                                            <p>• <strong>HTTP/FTP:</strong> Geringe Overheads (~7-8%) durch einfache Protokolle</p>
+                                            <p>• <strong>HTTPS/TLS:</strong> Verschlüsselung erhöht Overhead (~12%)</p>
+                                            <p>• <strong>SMB/CIFS:</strong> Netzwerk-Dateisysteme haben höhere Overheads (~20%)</p>
+                                            <p>• <strong>VPN/SFTP:</strong> Verschlüsselter Tunnel = mehr Overhead (~14-15%)</p>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {calculation && (
+                                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                        Aktives Profil: {calculation.overheadLabel} (−{calculation.overheadPercent}% Geschwindigkeit)
+                                    </p>
+                                )}
                             </div>
 
                             {/* Input Group 1: File Size */}
@@ -643,8 +702,8 @@ self.addEventListener('fetch', event => {
                 const swUrl = URL.createObjectURL(blob);
                 
                 navigator.serviceWorker.register(swUrl, { scope: '/' })
-                    .then(reg => console.log('✅ Service Worker registriert'))
-                    .catch(err => console.log('⚠️ Service Worker konnte nicht registriert werden:', err));
+                    .then(reg => console.log('Service Worker registriert'))
+                    .catch(err => console.log('Service Worker konnte nicht registriert werden:', err));
             });
         }
     </script>
