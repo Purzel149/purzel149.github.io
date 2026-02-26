@@ -14,16 +14,29 @@
     <title>Download Time Calculator</title>
     <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" defer></script>
     <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" defer></script>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography" defer></script>
     <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js" defer></script>
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
-    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
 
     <style>
+        /* === Base & Reset === */
         :root {
             color-scheme: light dark;
         }
-        
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.5;
+            background-color: #f9fafb;
+            color: #111827;
+            transition: color 0.3s, background-color 0.3s;
+        }
+
         @media (prefers-color-scheme: dark) {
             body {
                 background-color: #111827;
@@ -31,49 +44,288 @@
             }
         }
 
-        .gradient-border {
-            position: relative;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 1px;
-            border-radius: 0.75rem;
-        }
-
-        .gradient-border > div {
-            background: inherit;
-            border-radius: 0.75rem;
-            position: relative;
+        /* === Page Layout === */
+        .page-wrapper {
+            min-height: 100vh;
+            background: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
+            padding: 1rem;
+            transition: color 0.3s, background-color 0.3s;
         }
 
         @media (prefers-color-scheme: dark) {
-            .gradient-border > div {
-                background-color: #1f2937;
+            .page-wrapper {
+                background: linear-gradient(to bottom right, #111827, #1f2937);
             }
         }
 
-        @media (prefers-color-scheme: light) {
-            .gradient-border > div {
-                background-color: #ffffff;
+        @media (min-width: 640px) {
+            .page-wrapper { padding: 1.5rem; }
+        }
+
+        @media (min-width: 1024px) {
+            .page-wrapper { padding: 2rem; }
+        }
+
+        .container {
+            max-width: 42rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* === Header === */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 640px) {
+            .header { margin-bottom: 3rem; }
+        }
+
+        .page-title {
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #9333ea, #2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (min-width: 640px) {
+            .page-title {
+                font-size: 3rem;
+                line-height: 1;
             }
         }
 
-        .smooth-transition {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .page-subtitle {
+            color: #4b5563;
+            font-size: 1.125rem;
+            line-height: 1.75rem;
+            margin-bottom: 0.75rem;
         }
 
-        .progress-fill {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            border-radius: 9999px;
-            animation: slideIn 0.6s ease-out;
+        @media (prefers-color-scheme: dark) {
+            .page-subtitle { color: #d1d5db; }
         }
 
-        @keyframes slideIn {
-            from {
-                width: 0;
+        .old-version-link {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background-color: #e5e7eb;
+            color: #1f2937;
+            border-radius: 0.5rem;
+            transition: color 0.2s, background-color 0.2s;
+            text-decoration: none;
+        }
+
+        .old-version-link:hover {
+            background-color: #d1d5db;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .old-version-link {
+                background-color: #374151;
+                color: #f3f4f6;
+            }
+            .old-version-link:hover {
+                background-color: #4b5563;
             }
         }
 
-        input:invalid {
-            border-color: #ef4444;
+        /* === Main Card === */
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (min-width: 640px) {
+            .main-card { padding: 2rem; }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .main-card {
+                background: rgba(31, 41, 55, 0.95);
+                border: 1px solid rgba(107, 114, 128, 0.2);
+            }
+        }
+
+        /* === Overhead Section === */
+        .overhead-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .overhead-section { border-bottom-color: #374151; }
+        }
+
+        .overhead-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .overhead-left {
+            flex: 1 1 0%;
+        }
+
+        .overhead-title-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .overhead-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .overhead-title { color: #ffffff; }
+        }
+
+        .info-btn {
+            color: #9333ea;
+            transition: color 0.15s;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .info-btn:hover { color: #7e22ce; }
+
+        @media (prefers-color-scheme: dark) {
+            .info-btn { color: #c084fc; }
+            .info-btn:hover { color: #d8b4fe; }
+        }
+
+        .info-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .overhead-subtitle {
+            font-size: 0.875rem;
+            color: #4b5563;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .overhead-subtitle { color: #9ca3af; }
+        }
+
+        .overhead-select-wrap {
+            display: flex;
+            gap: 0.5rem;
+            width: 100%;
+            max-width: 20rem;
+        }
+
+        /* === Info Box === */
+        .info-box {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 0.5rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .info-box {
+                background-color: rgba(30, 58, 138, 0.2);
+                border-color: #1e40af;
+            }
+        }
+
+        .info-box-title {
+            font-weight: 600;
+            color: #1e3a8a;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .info-box-title { color: #bfdbfe; }
+        }
+
+        .info-box-text {
+            font-size: 0.875rem;
+            color: #1e40af;
+            margin-bottom: 0.75rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .info-box-text { color: #93c5fd; }
+        }
+
+        .info-box-list {
+            font-size: 0.875rem;
+            color: #1e40af;
+        }
+
+        .info-box-list > p {
+            margin-bottom: 0.25rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .info-box-list { color: #93c5fd; }
+        }
+
+        .active-profile {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .active-profile { color: #9ca3af; }
+        }
+
+        /* === Inputs === */
+        .input-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-section-lg {
+            margin-bottom: 2rem;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .input-label { color: #e5e7eb; }
+        }
+
+        .input-label-lg {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.75rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .input-label-lg { color: #e5e7eb; }
         }
 
         .input-group {
@@ -82,123 +334,91 @@
         }
 
         .input-base {
-            flex: 1 !important;
-            padding: 0.75rem !important;
-            border: 2px solid #e5e7eb !important;
-            border-radius: 0.5rem !important;
-            font-size: 1rem !important;
-            transition: all 0.2s !important;
-            background-color: #ffffff !important;
-            color: #111827 !important;
-            -webkit-appearance: none !important;
-            -moz-appearance: none !important;
-            appearance: none !important;
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background-color: #ffffff;
+            color: #111827;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
         .input-base::placeholder {
-            color: #9ca3af !important;
+            color: #9ca3af;
         }
 
         @media (prefers-color-scheme: dark) {
             .input-base {
-                background-color: #374151 !important;
-                border-color: #4b5563 !important;
-                color: #f3f4f6 !important;
+                background-color: #374151;
+                border-color: #4b5563;
+                color: #f3f4f6;
             }
-            
             .input-base::placeholder {
-                color: #9ca3af !important;
+                color: #9ca3af;
             }
         }
 
         .input-base:focus {
-            outline: none !important;
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         .select-base {
-            padding: 0.75rem !important;
-            border: 2px solid #e5e7eb !important;
-            border-radius: 0.5rem !important;
-            font-size: 0.95rem !important;
-            min-width: 100px !important;
-            cursor: pointer !important;
-            transition: all 0.2s !important;
-            background-color: #ffffff !important;
-            color: #111827 !important;
-            -webkit-appearance: none !important;
-            -moz-appearance: none !important;
-            appearance: none !important;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            min-width: 100px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: #ffffff;
+            color: #111827;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
         @media (prefers-color-scheme: dark) {
             .select-base {
-                background-color: #374151 !important;
-                border-color: #4b5563 !important;
-                color: #f3f4f6 !important;
+                background-color: #374151;
+                border-color: #4b5563;
+                color: #f3f4f6;
             }
-            
             .select-base option {
-                background-color: #374151 !important;
-                color: #f3f4f6 !important;
+                background-color: #374151;
+                color: #f3f4f6;
             }
         }
 
         .select-base:focus {
-            outline: none !important;
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 32px;
+        .select-full {
+            width: 100%;
         }
 
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
+        input:invalid {
+            border-color: #ef4444;
         }
 
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: 0.4s;
-            border-radius: 34px;
+        /* === Presets === */
+        .presets-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem;
         }
 
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: 0.4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background-color: #667eea;
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(28px);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .toggle-slider {
-                background-color: #4b5563;
+        @media (min-width: 640px) {
+            .presets-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
             }
         }
 
@@ -209,7 +429,11 @@
             background-color: white;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 0.9rem;
+            font-size: 0.75rem;
+        }
+
+        @media (min-width: 640px) {
+            .preset-btn { font-size: 0.875rem; }
         }
 
         @media (prefers-color-scheme: dark) {
@@ -233,6 +457,17 @@
             }
         }
 
+        .preset-name {
+            display: block;
+            font-weight: 500;
+        }
+
+        .preset-size {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        /* === Result Card === */
         .result-card {
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
             border: 2px solid #667eea;
@@ -247,40 +482,150 @@
             }
         }
 
-        .error-text {
-            color: #ef4444;
+        .result-card-centered {
+            text-align: center;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 640px) {
+            .result-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .result-label {
             font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-
-        .success-animation {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-        }
-
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 500;
+            color: #4b5563;
+            margin-bottom: 0.25rem;
         }
 
         @media (prefers-color-scheme: dark) {
-            .glass-effect {
-                background: rgba(31, 41, 55, 0.95);
-                border: 1px solid rgba(107, 114, 128, 0.2);
+            .result-label { color: #d1d5db; }
+        }
+
+        .result-time {
+            font-size: 1.875rem;
+            line-height: 2.25rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #9333ea, #2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        @media (min-width: 640px) {
+            .result-time {
+                font-size: 2.25rem;
+                line-height: 2.5rem;
             }
+        }
+
+        .finish-value {
+            font-size: 1.125rem;
+            line-height: 1.75rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        @media (min-width: 640px) {
+            .finish-value {
+                font-size: 1.25rem;
+                line-height: 1.75rem;
+            }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .finish-value { color: #ffffff; }
+        }
+
+        .empty-result-text {
+            color: #4b5563;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .empty-result-text { color: #d1d5db; }
+        }
+
+        /* === Progress Bar === */
+        .progress-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #d1d5db;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .progress-section { border-top-color: #4b5563; }
+        }
+
+        .speed-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .speed-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #4b5563;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .speed-label { color: #d1d5db; }
+        }
+
+        .speed-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #9333ea;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .speed-value { color: #c084fc; }
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            height: 0.75rem;
+            overflow: hidden;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .progress-bar-bg { background-color: #374151; }
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 9999px;
+            height: 100%;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { width: 0; }
+        }
+
+        /* === Footer === */
+        .footer {
+            text-align: center;
+            font-size: 0.875rem;
+            color: #4b5563;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .footer { color: #9ca3af; }
         }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
@@ -413,53 +758,53 @@
             }, [calculation]);
 
             return (
-                <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
-                    <div className="max-w-2xl mx-auto">
+                <div className="page-wrapper">
+                    <div className="container">
                         {/* Header */}
-                        <div className="text-center mb-8 sm:mb-12">
-                            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+                        <div className="header">
+                            <h1 className="page-title">
                                 Download Calculator
                             </h1>
-                            <p className="text-gray-600 dark:text-gray-300 text-lg mb-3">
+                            <p className="page-subtitle">
                                 Berechne die exakte Download-Zeit in Echtzeit
                             </p>
                             <a 
                                 href="/olddown" 
-                                className="inline-block px-4 py-2 text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
+                                className="old-version-link"
                             >
                                 ← Alte Version? Hier entlang
                             </a>
                         </div>
 
                         {/* Main Card */}
-                        <div className="glass-effect rounded-2xl shadow-2xl p-6 sm:p-8 mb-6">
+                        <div className="main-card">
                             {/* Overhead Dropdown */}
-                            <div className="mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-                                <div className="flex items-center justify-between gap-4">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
+                            <div className="overhead-section">
+                                <div className="overhead-row">
+                                    <div className="overhead-left">
+                                        <div className="overhead-title-row">
+                                            <h3 className="overhead-title">
                                                 Reale Bedingungen
                                             </h3>
                                             <button
                                                 onClick={() => setShowOverheadInfo(!showOverheadInfo)}
-                                                className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+                                                className="info-btn"
                                                 aria-label="Info zum Protokoll-Overhead"
                                             >
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                             </button>
                                         </div>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        <p className="overhead-subtitle">
                                             Protokoll-Overhead berücksichtigen
                                         </p>
                                     </div>
-                                    <div className="input-group w-full max-w-xs">
+                                    <div className="overhead-select-wrap">
                                         <select
                                             value={overheadProfile}
                                             onChange={(e) => setOverheadProfile(e.target.value)}
-                                            className="select-base w-full"
+                                            className="select-base select-full"
                                             aria-label="Overhead-Profil"
                                         >
                                             {OVERHEAD_PROFILES.map(p => (
@@ -471,14 +816,14 @@
                                 
                                 {/* Info-Box mit Erklärung */}
                                 {showOverheadInfo && (
-                                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                                        <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
+                                    <div className="info-box">
+                                        <h4 className="info-box-title">
                                             📡 Was ist Protokoll-Overhead?
                                         </h4>
-                                        <p className="text-sm text-blue-800 dark:text-blue-300 mb-3">
+                                        <p className="info-box-text">
                                             Bei jeder Datenübertragung werden zusätzlich zur eigentlichen Datei auch Verwaltungsinformationen (Header, Prüfsummen, Bestätigungen) übertragen. Dieser "Overhead" reduziert die effektive Geschwindigkeit.
                                         </p>
-                                        <div className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                                        <div className="info-box-list">
                                             <p>• <strong>HTTP/FTP:</strong> Geringe Overheads (~7-8%) durch einfache Protokolle</p>
                                             <p>• <strong>HTTPS/TLS:</strong> Verschlüsselung erhöht Overhead (~12%)</p>
                                             <p>• <strong>SMB/CIFS:</strong> Netzwerk-Dateisysteme haben höhere Overheads (~20%)</p>
@@ -488,15 +833,15 @@
                                 )}
                                 
                                 {calculation && (
-                                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <p className="active-profile">
                                         Aktives Profil: {calculation.overheadLabel} (−{calculation.overheadPercent}% Geschwindigkeit)
                                     </p>
                                 )}
                             </div>
 
                             {/* Input Group 1: File Size */}
-                            <div className="mb-6">
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                            <div className="input-section">
+                                <label className="input-label">
                                     Dateigröße
                                 </label>
                                 <div className="input-group">
@@ -524,8 +869,8 @@
                             </div>
 
                             {/* Input Group 2: Speed */}
-                            <div className="mb-8">
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                            <div className="input-section-lg">
+                                <label className="input-label">
                                     Internetgeschwindigkeit
                                 </label>
                                 <div className="input-group">
@@ -553,19 +898,19 @@
                             </div>
 
                             {/* Presets */}
-                            <div className="mb-8">
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
+                            <div className="input-section-lg">
+                                <label className="input-label-lg">
                                     Schnellwahl
                                 </label>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <div className="presets-grid">
                                     {PRESETS.map((preset, idx) => (
                                         <button
                                             key={idx}
                                             onClick={() => handlePreset(preset)}
-                                            className="preset-btn text-xs sm:text-sm"
+                                            className="preset-btn"
                                         >
-                                            <span className="block font-medium">{preset.name}</span>
-                                            <span className="text-xs opacity-70">
+                                            <span className="preset-name">{preset.name}</span>
+                                            <span className="preset-size">
                                                 {preset.size}
                                                 {preset.unit}
                                             </span>
@@ -577,46 +922,46 @@
                             {/* Result */}
                             {calculation ? (
                                 <div className="result-card">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="result-grid">
                                         <div>
-                                            <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+                                            <p className="result-label">
                                                 Download-Zeit
                                             </p>
-                                            <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                                            <p className="result-time">
                                                 {calculation.formatted}
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+                                            <p className="result-label">
                                                 Fertig am
                                             </p>
-                                            <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white">
+                                            <p className="finish-value">
                                                 {calculation.finishTime}
                                             </p>
                                         </div>
                                     </div>
 
                                     {/* Progress Bar */}
-                                    <div className="mt-6 pt-6 border-t border-gray-300 dark:border-gray-600">
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                                    <div className="progress-section">
+                                        <div className="speed-row">
+                                            <span className="speed-label">
                                                 Geschwindigkeit
                                             </span>
-                                            <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
+                                            <span className="speed-value">
                                                 {calculation.mbPerSec.toFixed(2)} MB/s
                                             </span>
                                         </div>
-                                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                                        <div className="progress-bar-bg">
                                             <div
-                                                className="progress-fill h-full"
+                                                className="progress-fill"
                                                 style={{ width: `${progressPercent}%` }}
                                             ></div>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="result-card text-center">
-                                    <p className="text-gray-600 dark:text-gray-300">
+                                <div className="result-card result-card-centered">
+                                    <p className="empty-result-text">
                                         Gib die Dateigröße und Internetgeschwindigkeit ein, um die Download-Zeit zu berechnen.
                                     </p>
                                 </div>
@@ -624,7 +969,7 @@
                         </div>
 
                         {/* Footer */}
-                        <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+                        <div className="footer">
                             <p>
                                 💡 Tipp: Nutze "Reale Bedingungen" für genauere Vorhersagen
                             </p>
@@ -646,7 +991,6 @@ const urlsToCache = [
   '/down.html',
   'https://unpkg.com/react@18.2.0/umd/react.production.min.js',
   'https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js',
-  'https://cdn.tailwindcss.com?plugins=forms,typography',
   'https://unpkg.com/@babel/standalone@7.23.5/babel.min.js'
 ];
 
