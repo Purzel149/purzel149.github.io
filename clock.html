@@ -1598,7 +1598,7 @@
             <div class="location-details">
               <div class="city-name-row">
                 <span class="city-flag" aria-hidden="true">${getFlagHTML(meta, 22)}</span>
-                <h3 class="city-name">${customName}</h3>
+                <h3 class="city-name"></h3>
               </div>
               <span class="timezone-name">${tz}</span>
             </div>
@@ -1626,6 +1626,8 @@
           </div>
         </div>
       `;
+
+      card.querySelector('.city-name').textContent = customName;
 
       // Event listeners for actions
       const optionsBtn = card.querySelector('.options-btn');
