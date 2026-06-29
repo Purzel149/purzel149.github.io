@@ -2048,7 +2048,12 @@
       const slicedMatches = matches.slice(0, 40);
 
       if (slicedMatches.length === 0) {
-        el.searchResults.innerHTML = `<div style="padding: 20px; color: var(--muted); text-align: center;">No matches found for "${query}"</div>`;
+        const noResults = document.createElement('div');
+        noResults.style.padding = '20px';
+        noResults.style.color = 'var(--muted)';
+        noResults.style.textAlign = 'center';
+        noResults.textContent = `No matches found for "${query}"`;
+        el.searchResults.appendChild(noResults);
         return;
       }
 
