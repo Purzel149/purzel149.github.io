@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
     <meta name="description" content="Berechne präzise Download-Zeiten mit unserem kostenlosen Online-Tool. Live-Berechnung mit Overhead-Simulation und Fertig-Zeit.">
     <meta name="keywords" content="Download Calculator, Download Zeit, Internetgeschwindigkeit, Dateigröße">
     <meta name="author" content="Purzel149">
@@ -12,9 +14,9 @@
     <meta property="og:type" content="website">
     <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'%3E%3Crect fill='%23667eea' width='1200' height='630'/%3E%3Ctext x='50%25' y='50%25' font-size='72' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'%3EDownload Calculator%3C/text%3E%3C/svg%3E">
     <title>Download Time Calculator</title>
-    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" defer></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" defer></script>
-    <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js" defer></script>
+    <script crossorigin="anonymous" integrity="sha384-tMH8h3BGESGckSAVGZ82T9n90ztNXxvdwvdM6UoR56cYcf+0iGXBliJ29D+wZ/x8" src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" defer></script>
+    <script crossorigin="anonymous" integrity="sha384-bm7MnzvK++ykSwVJ2tynSE5TRdN+xL418osEVF2DE/L/gfWHj91J2Sphe582B1Bh" src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" defer></script>
+    <script crossorigin="anonymous" integrity="sha384-1qlE7MZPM2pHD/pBZCU/yB8UCP52RYL8bge/qNdfNBCWToySp8/M+JL2waXU4hjJ" src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js" defer></script>
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
     <style>
@@ -768,12 +770,6 @@
                             <p className="page-subtitle">
                                 Berechne die exakte Download-Zeit in Echtzeit
                             </p>
-                            <a 
-                                href="/olddown" 
-                                className="old-version-link"
-                            >
-                                ← Alte Version? Hier entlang
-                            </a>
                         </div>
 
                         {/* Main Card */}
@@ -981,74 +977,17 @@
 
         ReactDOM.render(<DownloadCalculator />, document.getElementById("root"));
 
-        // Service Worker Registration für Offline-Unterstützung
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swCode = `
-const CACHE_NAME = 'download-calc-v1';
-const urlsToCache = [
-  '/',
-  '/down.html',
-  'https://unpkg.com/react@18.2.0/umd/react.production.min.js',
-  'https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js',
-  'https://unpkg.com/@babel/standalone@7.23.5/babel.min.js'
-];
-
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache).catch(() => console.log('Offline-Cache teilweise nicht verfügbar')))
-      .then(() => self.skipWaiting())
-  );
-});
-
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) return response;
-        
-        return fetch(event.request).then(response => {
-          if (!response || response.status !== 200) return response;
-          
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then(cache => cache.put(event.request, responseToCache));
-          
-          return response;
-        });
-      })
-      .catch(() => {
-        // Fallback für offline
-        return caches.match(event.request);
-      })
-  );
-});
-                `;
-                
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                
-                navigator.serviceWorker.register(swUrl, { scope: '/' })
-                    .then(reg => console.log('Service Worker registriert'))
-                    .catch(err => console.log('Service Worker konnte nicht registriert werden:', err));
-            });
+            navigator.serviceWorker.getRegistrations()
+                .then(registrations => registrations.forEach(registration => {
+                    if (registration.scope === `${window.location.origin}/`) {
+                        registration.unregister();
+                    }
+                }))
+                .catch(() => {});
+        }
+        if ('caches' in window) {
+            caches.delete('download-calc-v1').catch(() => {});
         }
     </script>
 </body>

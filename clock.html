@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://flagcdn.com data:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
   <title>World Clock Toolbox - Premium Clock Hub</title>
   
   <!-- Premium Fonts -->
@@ -1406,16 +1408,54 @@
       };
     }
 
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      })[char]);
+    }
+
     function getFlagHTML(meta, width = 24) {
       if (meta.cc) {
-        return `<img src="https://flagcdn.com/w40/${meta.cc.toLowerCase()}.png" width="${width}" alt="${meta.country} flag" style="border-radius: 2px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.25);" onerror="this.onerror=null; this.outerHTML='<span style=&quot;font-size: ${width * 0.8}px; vertical-align: middle;&quot;>${meta.flag || '🌐'}</span>'">`;
+        return `<img src="https://flagcdn.com/w40/${escapeHTML(meta.cc.toLowerCase())}.png" width="${width}" alt="${escapeHTML(meta.country)} flag" style="border-radius: 2px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.25);" loading="lazy" referrerpolicy="no-referrer">`;
       }
-      return `<span style="font-size: ${width * 0.8}px; vertical-align: middle;">${meta.flag || '🌐'}</span>`;
+      return `<span style="font-size: ${width * 0.8}px; vertical-align: middle;">${escapeHTML(meta.flag || '🌐')}</span>`;
+    }
+
+    function readStorageJSON(primaryKey, legacyKey, fallback) {
+      const fallbackCopy = Array.isArray(fallback) ? [...fallback] : { ...fallback };
+      try {
+        const raw = localStorage.getItem(primaryKey) || localStorage.getItem(legacyKey);
+        return raw ? JSON.parse(raw) : fallbackCopy;
+      } catch (e) {
+        return fallbackCopy;
+      }
+    }
+
+    function isValidTimezone(tz) {
+      if (tz === 'UTC') return true;
+      try {
+        new Intl.DateTimeFormat('en-US', { timeZone: tz }).format(new Date());
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function normalizeStoredCities(value) {
+      const fallbackCities = ["Europe/Berlin", "UTC", "America/New_York", "Asia/Tokyo"];
+      if (!Array.isArray(value)) return fallbackCities;
+      const safeCities = [...new Set(value.filter(tz => typeof tz === 'string' && isValidTimezone(tz)))];
+      return safeCities.length ? safeCities : fallbackCities;
     }
 
     // ---------- System State ----------
-    let userCities = JSON.parse(localStorage.getItem('worldclocktoolbox:cities') || localStorage.getItem('chronos:cities') || '["Europe/Berlin", "UTC", "America/New_York", "Asia/Tokyo"]');
-    let customLabels = JSON.parse(localStorage.getItem('worldclocktoolbox:labels') || localStorage.getItem('chronos:labels') || '{}');
+    let userCities = normalizeStoredCities(readStorageJSON('worldclocktoolbox:cities', 'chronos:cities', ["Europe/Berlin", "UTC", "America/New_York", "Asia/Tokyo"]));
+    let customLabels = readStorageJSON('worldclocktoolbox:labels', 'chronos:labels', {});
+    if (!customLabels || typeof customLabels !== 'object' || Array.isArray(customLabels)) customLabels = {};
     let use24Hour = (localStorage.getItem('worldclocktoolbox:24h') || localStorage.getItem('chronos:24h')) !== 'false'; // default true
     let activePlannerOffset = 0; // minutes offset
 
@@ -1600,15 +1640,15 @@
                 <span class="city-flag" aria-hidden="true">${getFlagHTML(meta, 22)}</span>
                 <h3 class="city-name"></h3>
               </div>
-              <span class="timezone-name">${tz}</span>
+              <span class="timezone-name">${escapeHTML(tz)}</span>
             </div>
             <div class="card-actions">
               <button class="options-btn" aria-label="Clock Options" aria-expanded="false">&#8942;</button>
               <div class="options-menu">
                 <button class="menu-item move-up-btn" data-index="${index}">Move Up</button>
                 <button class="menu-item move-down-btn" data-index="${index}">Move Down</button>
-                <button class="menu-item rename-btn" data-tz="${tz}">Rename</button>
-                <button class="menu-item danger remove-btn" data-tz="${tz}">Remove</button>
+                <button class="menu-item rename-btn" data-tz="${escapeHTML(tz)}">Rename</button>
+                <button class="menu-item danger remove-btn" data-tz="${escapeHTML(tz)}">Remove</button>
               </div>
             </div>
           </div>
@@ -1617,7 +1657,7 @@
             <div class="digital-time" id="digTime-${index}">00:00:00</div>
             <div class="date-row">
               <span id="digDate-${index}">Date</span>
-              <span class="offset-badge" id="offsetBadge-${index}">${getTimezoneShortOffset(tz)}</span>
+              <span class="offset-badge" id="offsetBadge-${index}">${escapeHTML(getTimezoneShortOffset(tz))}</span>
             </div>
             <div id="relativeOffset-${index}" class="date-row" style="margin-top: 3px; font-size: 11px;"></div>
             <div class="daylight-badge" id="podBadge-${index}">
@@ -2084,13 +2124,13 @@
           <div class="search-item-left">
             <span class="search-flag" aria-hidden="true">${getFlagHTML(item.meta, 26)}</span>
             <div class="search-city-details">
-              <span class="search-city-name">${item.meta.city}</span>
-              <span class="search-country-name">${displayCountryStr} (${item.tz})</span>
+              <span class="search-city-name">${escapeHTML(item.meta.city)}</span>
+              <span class="search-country-name">${escapeHTML(displayCountryStr)} (${escapeHTML(item.tz)})</span>
             </div>
           </div>
           <div class="search-item-right">
-            <span class="search-time">${localTimeStr}</span>
-            <span class="search-offset">${offsetStr}</span>
+            <span class="search-time">${escapeHTML(localTimeStr)}</span>
+            <span class="search-offset">${escapeHTML(offsetStr)}</span>
           </div>
         `;
 
@@ -2104,6 +2144,10 @@
     }
 
     function addCity(tz) {
+      if (!isValidTimezone(tz)) {
+        showToast("Invalid timezone");
+        return;
+      }
       if (userCities.includes(tz)) {
         showToast("Timezone already active");
         return;

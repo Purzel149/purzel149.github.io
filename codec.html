@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
   <meta name="description" content="Feature-rich local encoder and decoder for Base64, URLs, HTML entities, Hexadecimal, Binary, and JWT tokens.">
   <meta name="theme-color" content="#0f172a">
   <title>Data Codec</title>
@@ -730,14 +732,28 @@
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return { ...DEFAULT_STATE };
-        return { ...DEFAULT_STATE, ...JSON.parse(raw) };
+        const parsed = JSON.parse(raw);
+        delete parsed.input;
+        return { ...DEFAULT_STATE, ...parsed, input: "" };
       } catch {
         return { ...DEFAULT_STATE };
       }
     }
 
     function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          tab: state.tab,
+          mode: state.mode,
+          theme: state.theme,
+          language: state.language,
+          b64UrlSafe: state.b64UrlSafe,
+          b64DataUrl: state.b64DataUrl,
+          urlEncodeAll: state.urlEncodeAll,
+          hexSeparator: state.hexSeparator,
+          binSeparator: state.binSeparator
+        }));
+      } catch (e) {}
     }
 
     function getLanguage() {
@@ -1076,7 +1092,6 @@
         els.inputText.value = result;
         state.input = result;
         processConversion();
-        saveState();
       };
       reader.readAsDataURL(file);
     }
@@ -1235,7 +1250,6 @@
       els.inputText.addEventListener("input", (event) => {
         state.input = event.target.value;
         processConversion();
-        saveState();
       });
 
       els.pasteBtn.addEventListener("click", () => {
@@ -1243,7 +1257,6 @@
           els.inputText.value = text;
           state.input = text;
           processConversion();
-          saveState();
         });
       });
 
@@ -1251,7 +1264,6 @@
         els.inputText.value = "";
         state.input = "";
         processConversion();
-        saveState();
       });
 
       els.swapBtn.addEventListener("click", swapInputOutput);
