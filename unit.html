@@ -1,0 +1,1630 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Feature-rich unit converter for length, mass, temperature, area, volume, speed, time, data, energy, and pressure.">
+  <meta name="theme-color" content="#0f172a">
+  <title>Unit Converter</title>
+  <script>
+    (function() {
+      try {
+        const raw = localStorage.getItem("unit-converter-v1");
+        const theme = raw ? JSON.parse(raw).theme : "system";
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const resolved = theme === "system" ? (prefersDark ? "dark" : "light") : theme;
+        document.documentElement.dataset.theme = resolved;
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --bg-2: #eef2ff;
+      --surface: rgba(255, 255, 255, 0.88);
+      --surface-strong: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: rgba(148, 163, 184, 0.25);
+      --accent: #6366f1;
+      --accent-2: #8b5cf6;
+      --success: #059669;
+      --shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+      --radius: 24px;
+      --radius-sm: 16px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #020617;
+      --bg-2: #0f172a;
+      --surface: rgba(15, 23, 42, 0.78);
+      --surface-strong: #111827;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --border: rgba(148, 163, 184, 0.18);
+      --accent: #818cf8;
+      --accent-2: #a78bfa;
+      --success: #34d399;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      color-scheme: light dark;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(99, 102, 241, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(139, 92, 246, 0.14), transparent 28%),
+        linear-gradient(180deg, var(--bg), var(--bg-2));
+      color: var(--text);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 18px 0 42px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      border-radius: var(--radius);
+    }
+
+    .hero {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      align-items: center;
+      grid-template-columns: 1fr auto;
+      margin-bottom: 16px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 0.72rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.02;
+      margin-bottom: 10px;
+    }
+
+    .hero p,
+    .section-subtitle,
+    .muted {
+      color: var(--muted);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 0.82rem 1rem;
+      border-radius: 14px;
+      background: var(--surface-strong);
+      color: var(--text);
+      border: 1px solid var(--border);
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      border: 0;
+    }
+
+    .btn.ghost {
+      background: transparent;
+    }
+
+    .toolbar {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .tab {
+      flex: 0 0 auto;
+      padding: 0.85rem 1rem;
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+    }
+
+    .controls {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .controls-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1.4fr 0.9fr auto 0.9fr;
+      align-items: end;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label,
+    .label-row {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .input,
+    .select {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text);
+      padding: 0.95rem 1rem;
+      outline: none;
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .input:focus,
+    .select:focus {
+      border-color: rgba(99, 102, 241, 0.55);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+    }
+
+    .swap-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-bottom: 2px;
+    }
+
+    .swap-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      box-shadow: 0 10px 28px rgba(99, 102, 241, 0.28);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .secondary-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr 220px;
+      align-items: end;
+    }
+
+    .range-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .range-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .section {
+      margin-top: 16px;
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .section-head h2 {
+      font-size: 1.35rem;
+      margin-bottom: 6px;
+    }
+
+    .section-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .favorites,
+    .quick-picks {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      border-radius: 999px;
+      padding: 0.72rem 0.92rem;
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      color: var(--text);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .chip:hover {
+      transform: translateY(-1px);
+      border-color: rgba(99, 102, 241, 0.35);
+    }
+
+    .chip.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      border-color: transparent;
+    }
+
+    .chip.small {
+      padding: 0.55rem 0.8rem;
+      font-size: 0.92rem;
+    }
+
+    .output-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1.2fr 0.8fr;
+      align-items: start;
+    }
+
+    .result-card {
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.12), transparent 60%), var(--surface-strong);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 22px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .result-label {
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.75rem;
+    }
+
+    .result-value {
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      line-height: 1.05;
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    .result-meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .side-panel {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mini-card {
+      padding: 16px;
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .mini-value {
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .units-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .units-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .unit-card {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      display: grid;
+      gap: 8px;
+      min-height: 104px;
+    }
+
+    .unit-card.active {
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.14), transparent 70%), var(--surface-strong);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .unit-name {
+      font-weight: 800;
+    }
+
+    .unit-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .unit-id {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .history-item {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .history-main {
+      display: grid;
+      gap: 4px;
+    }
+
+    .history-value {
+      font-weight: 800;
+    }
+
+    .history-meta {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .notice {
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .controls-grid,
+      .secondary-grid,
+      .output-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .swap-wrap {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .app {
+        width: min(100% - 16px, 1180px);
+        padding-top: 8px;
+      }
+
+      .hero,
+      .controls,
+      .section {
+        padding: 16px;
+      }
+
+      .section-head {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="hero card">
+      <div>
+        <p class="eyebrow" id="eyebrowText">Static utility</p>
+        <h1 id="heroTitle">Unit Converter</h1>
+        <p class="section-subtitle" id="heroSubtitle">Fast conversions with favorites, history, precision control, and full category browsing.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn ghost" id="languageBtn" type="button">Deutsch</button>
+        <button class="btn ghost" id="themeBtn" type="button">Toggle theme</button>
+        <button class="btn primary" id="resetAllBtn" type="button">Reset all</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="tabs card" id="categoryTabs"></div>
+
+      <section class="card controls" aria-label="Conversion controls">
+        <div class="controls-grid">
+          <div class="field">
+            <label for="amountInput" id="amountLabel">Amount</label>
+            <input class="input" id="amountInput" type="number" inputmode="decimal" step="any" placeholder="Enter a value">
+          </div>
+          <div class="field">
+            <label for="fromUnit" id="fromLabel">From</label>
+            <select class="select" id="fromUnit"></select>
+          </div>
+          <div class="swap-wrap">
+            <button class="swap-btn" id="swapBtn" type="button" aria-label="Swap units">
+              <span aria-hidden="true">⇄</span>
+            </button>
+          </div>
+          <div class="field">
+            <label for="toUnit" id="toLabel">To</label>
+            <select class="select" id="toUnit"></select>
+          </div>
+        </div>
+
+        <div class="secondary-grid">
+          <div class="range-row">
+            <div class="range-meta">
+              <span class="label-row" id="precisionText">Precision</span>
+              <span id="precisionLabel">4 decimals</span>
+            </div>
+            <input id="precisionRange" type="range" min="0" max="8" value="4">
+          </div>
+
+          <div class="field">
+            <label for="searchInput" id="searchLabel">Search units</label>
+            <input class="input" id="searchInput" type="search" placeholder="Filter the unit list">
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card section" aria-label="Current category">
+      <div class="section-head">
+        <div>
+          <h2 id="categoryTitle">Length</h2>
+          <p class="section-subtitle" id="categoryDescription">Measure distances, sizes, and travel spans.</p>
+        </div>
+        <div class="section-actions">
+          <button class="btn" id="pinFromBtn" type="button">Pin from unit</button>
+          <button class="btn" id="pinToBtn" type="button">Pin to unit</button>
+          <button class="btn" id="copyBtn" type="button">Copy result</button>
+        </div>
+      </div>
+
+      <div class="favorites" id="favoritesBar"></div>
+      <div class="quick-picks" id="quickPicks"></div>
+
+      <div class="output-grid">
+        <div class="result-card">
+          <div class="result-label" id="primaryResultLabel">Primary result</div>
+          <div class="result-value" id="mainResult">--</div>
+          <div class="result-meta" id="mainMeta"></div>
+          <div class="notice" id="formulaNote"></div>
+        </div>
+
+        <div class="side-panel">
+          <div class="mini-card">
+            <div class="result-label" id="reverseLabel">Reverse check</div>
+            <div class="mini-value" id="reverseResult">--</div>
+            <div class="notice" id="reverseNote">1 target unit converted back into the source unit.</div>
+          </div>
+          <div class="mini-card">
+            <div class="result-label" id="snapshotLabel">Category snapshot</div>
+            <div class="mini-value" id="categoryStats">0 units</div>
+            <div class="notice" id="categoryHint"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="units-header">
+        <div>
+          <h3 id="allUnitsTitle">All units</h3>
+          <p class="section-subtitle" id="allUnitsSubtitle">Live values for the current amount across the category.</p>
+        </div>
+        <div class="notice" id="resultsCount"></div>
+      </div>
+      <div class="units-grid" id="unitsGrid"></div>
+    </section>
+
+    <section class="card section" aria-label="Recent conversions">
+      <div class="section-head">
+        <div>
+          <h2 id="historyTitle">Recent conversions</h2>
+          <p class="section-subtitle" id="historySubtitle">Saved locally in this browser.</p>
+        </div>
+        <div class="section-actions">
+          <button class="btn" id="clearHistoryBtn" type="button">Clear history</button>
+        </div>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "unit-converter-v1";
+
+    function cloneState(source) {
+      return JSON.parse(JSON.stringify(source));
+    }
+
+    const CATEGORIES = {
+      length: {
+        label: "Length",
+        description: "Measure distances, sizes, and travel spans.",
+        hint: "Good for travel, maps, and everyday measurements.",
+        type: "linear",
+        base: "m",
+        quick: ["mm", "cm", "m", "km", "in", "ft"],
+        units: [
+          { id: "mm", name: "Millimeter", factor: 0.001 },
+          { id: "cm", name: "Centimeter", factor: 0.01 },
+          { id: "m", name: "Meter", factor: 1 },
+          { id: "km", name: "Kilometer", factor: 1000 },
+          { id: "in", name: "Inch", factor: 0.0254 },
+          { id: "ft", name: "Foot", factor: 0.3048 },
+          { id: "yd", name: "Yard", factor: 0.9144 },
+          { id: "mi", name: "Mile", factor: 1609.344 },
+          { id: "nmi", name: "Nautical mile", factor: 1852 }
+        ]
+      },
+      mass: {
+        label: "Mass",
+        description: "Mass and weight-style conversions for everyday use.",
+        hint: "Useful for recipes, science, and shipping estimates.",
+        type: "linear",
+        base: "g",
+        quick: ["mg", "g", "kg", "oz", "lb"],
+        units: [
+          { id: "mg", name: "Milligram", factor: 0.001 },
+          { id: "g", name: "Gram", factor: 1 },
+          { id: "kg", name: "Kilogram", factor: 1000 },
+          { id: "oz", name: "Ounce", factor: 28.349523125 },
+          { id: "lb", name: "Pound", factor: 453.59237 },
+          { id: "st", name: "Stone", factor: 6350.29318 },
+          { id: "t", name: "Metric ton", factor: 1000000 }
+        ]
+      },
+      temperature: {
+        label: "Temperature",
+        description: "Convert between the common temperature scales.",
+        hint: "Handles offset scales like Celsius and Fahrenheit correctly.",
+        type: "temperature",
+        quick: ["C", "F", "K", "R"],
+        units: [
+          { id: "C", name: "Celsius" },
+          { id: "F", name: "Fahrenheit" },
+          { id: "K", name: "Kelvin" },
+          { id: "R", name: "Rankine" }
+        ]
+      },
+      area: {
+        label: "Area",
+        description: "Measure surface coverage for land, rooms, and plans.",
+        hint: "Great for floor plans, gardens, and property estimates.",
+        type: "linear",
+        base: "m2",
+        quick: ["cm2", "m2", "km2", "ac", "ha"],
+        units: [
+          { id: "mm2", name: "Square millimeter", factor: 0.000001 },
+          { id: "cm2", name: "Square centimeter", factor: 0.0001 },
+          { id: "m2", name: "Square meter", factor: 1 },
+          { id: "km2", name: "Square kilometer", factor: 1000000 },
+          { id: "in2", name: "Square inch", factor: 0.00064516 },
+          { id: "ft2", name: "Square foot", factor: 0.09290304 },
+          { id: "yd2", name: "Square yard", factor: 0.83612736 },
+          { id: "ac", name: "Acre", factor: 4046.8564224 },
+          { id: "ha", name: "Hectare", factor: 10000 }
+        ]
+      },
+      volume: {
+        label: "Volume",
+        description: "Capacity and liquid volume conversions.",
+        hint: "Handy for cooking, containers, and chemistry.",
+        type: "linear",
+        base: "l",
+        quick: ["ml", "l", "m3", "gal", "cup"],
+        units: [
+          { id: "ml", name: "Milliliter", factor: 0.001 },
+          { id: "l", name: "Liter", factor: 1 },
+          { id: "m3", name: "Cubic meter", factor: 1000 },
+          { id: "tsp", name: "Teaspoon", factor: 0.00492892159375 },
+          { id: "tbsp", name: "Tablespoon", factor: 0.01478676478125 },
+          { id: "cup", name: "Cup", factor: 0.2365882365 },
+          { id: "pt", name: "Pint", factor: 0.473176473 },
+          { id: "qt", name: "Quart", factor: 0.946352946 },
+          { id: "gal", name: "US gallon", factor: 3.785411784 }
+        ]
+      },
+      speed: {
+        label: "Speed",
+        description: "Convert movement rates for roads, travel, and physics.",
+        hint: "Includes familiar transport units in metric and imperial scales.",
+        type: "linear",
+        base: "mps",
+        quick: ["mps", "kph", "mph", "kn", "fps"],
+        units: [
+          { id: "mps", name: "Meter per second", factor: 1 },
+          { id: "kph", name: "Kilometer per hour", factor: 0.2777777777777778 },
+          { id: "mph", name: "Mile per hour", factor: 0.44704 },
+          { id: "kn", name: "Knot", factor: 0.5144444444444445 },
+          { id: "fps", name: "Foot per second", factor: 0.3048 }
+        ]
+      },
+      datarate: {
+        label: "Data rate",
+        description: "Network and transfer throughput units.",
+        hint: "Useful for internet plans, downloads, and streaming.",
+        type: "linear",
+        base: "bps",
+        quick: ["bps", "Kbps", "Mbps", "Gbps", "MBps"],
+        units: [
+          { id: "bps", name: "Bit per second", factor: 1 },
+          { id: "Kbps", name: "Kilobit per second", factor: 1000 },
+          { id: "Mbps", name: "Megabit per second", factor: 1000000 },
+          { id: "Gbps", name: "Gigabit per second", factor: 1000000000 },
+          { id: "Bps", name: "Byte per second", factor: 8 },
+          { id: "KBps", name: "Kilobyte per second", factor: 8000 },
+          { id: "MBps", name: "Megabyte per second", factor: 8000000 }
+        ]
+      },
+      time: {
+        label: "Time",
+        description: "Durations from tiny intervals to long spans.",
+        hint: "Great for schedules, estimates, and work planning.",
+        type: "linear",
+        base: "s",
+        quick: ["s", "min", "h", "d", "wk"],
+        units: [
+          { id: "ms", name: "Millisecond", factor: 0.001 },
+          { id: "s", name: "Second", factor: 1 },
+          { id: "min", name: "Minute", factor: 60 },
+          { id: "h", name: "Hour", factor: 3600 },
+          { id: "d", name: "Day", factor: 86400 },
+          { id: "wk", name: "Week", factor: 604800 },
+          { id: "mo", name: "Average month", factor: 2629800 },
+          { id: "yr", name: "Average year", factor: 31557600 }
+        ]
+      },
+      data: {
+        label: "Data",
+        description: "Digital storage and transfer units.",
+        hint: "Uses binary-style storage units and decimal multiples.",
+        type: "linear",
+        base: "B",
+        quick: ["B", "KB", "MB", "GB", "TB"],
+        units: [
+          { id: "b", name: "Bit", factor: 0.125 },
+          { id: "B", name: "Byte", factor: 1 },
+          { id: "KB", name: "Kilobyte", factor: 1000 },
+          { id: "MB", name: "Megabyte", factor: 1000000 },
+          { id: "GB", name: "Gigabyte", factor: 1000000000 },
+          { id: "TB", name: "Terabyte", factor: 1000000000000 },
+          { id: "KiB", name: "Kibibyte", factor: 1024 },
+          { id: "MiB", name: "Mebibyte", factor: 1048576 },
+          { id: "GiB", name: "Gibibyte", factor: 1073741824 },
+          { id: "TiB", name: "Tebibyte", factor: 1099511627776 }
+        ]
+      },
+      energy: {
+        label: "Energy",
+        description: "Work, heat, and battery-related measurements.",
+        hint: "Useful for nutrition labels and physics homework.",
+        type: "linear",
+        base: "J",
+        quick: ["J", "kJ", "Wh", "kWh", "cal"],
+        units: [
+          { id: "J", name: "Joule", factor: 1 },
+          { id: "kJ", name: "Kilojoule", factor: 1000 },
+          { id: "Wh", name: "Watt hour", factor: 3600 },
+          { id: "kWh", name: "Kilowatt hour", factor: 3600000 },
+          { id: "cal", name: "Calorie", factor: 4.184 },
+          { id: "kcal", name: "Kilocalorie", factor: 4184 },
+          { id: "BTU", name: "BTU", factor: 1055.05585262 }
+        ]
+      },
+      pressure: {
+        label: "Pressure",
+        description: "Force per area for weather, tires, and engineering.",
+        hint: "Includes atmospheric and SI pressure units.",
+        type: "linear",
+        base: "Pa",
+        quick: ["Pa", "kPa", "bar", "psi", "atm"],
+        units: [
+          { id: "Pa", name: "Pascal", factor: 1 },
+          { id: "kPa", name: "Kilopascal", factor: 1000 },
+          { id: "MPa", name: "Megapascal", factor: 1000000 },
+          { id: "bar", name: "Bar", factor: 100000 },
+          { id: "atm", name: "Atmosphere", factor: 101325 },
+          { id: "psi", name: "PSI", factor: 6894.757293168 },
+          { id: "torr", name: "Torr", factor: 133.32236842105263 }
+        ]
+      }
+    };
+
+    const DEFAULT_STATE = {
+      category: "length",
+      from: "m",
+      to: "km",
+      amount: "1",
+      precision: 4,
+      search: "",
+      theme: "system",
+      language: "en",
+      favorites: {},
+      history: []
+    };
+
+    const UI_TEXT = {
+      en: {
+        locale: "en-US",
+        languageName: "Deutsch",
+        title: "Unit Converter",
+        description: "Feature-rich unit converter for length, mass, temperature, area, volume, speed, time, data, energy, and pressure.",
+        eyebrow: "Static utility",
+        heroTitle: "Unit Converter",
+        heroSubtitle: "Fast conversions with favorites, history, precision control, and full category browsing.",
+        toggleTheme: "Toggle theme",
+        themeSystem: "Theme: system",
+        themeDark: "Theme: dark",
+        themeLight: "Theme: light",
+        resetAll: "Reset all",
+        amount: "Amount",
+        amountPlaceholder: "Enter a value",
+        from: "From",
+        to: "To",
+        swapUnits: "Swap units",
+        precision: "Precision",
+        decimals: (count) => `${count} decimal${count === 1 ? "" : "s"}`,
+        searchUnits: "Search units",
+        searchPlaceholder: "Filter the unit list",
+        pinFrom: "Pin from unit",
+        pinTo: "Pin to unit",
+        unpinFrom: "Unpin from unit",
+        unpinTo: "Unpin to unit",
+        copyResult: "Copy result",
+        copied: "Copied!",
+        primaryResult: "Primary result",
+        reverseCheck: "Reverse check",
+        reverseNote: "1 target unit converted back into the source unit.",
+        categorySnapshot: "Category snapshot",
+        units: (count) => `${count} unit${count === 1 ? "" : "s"}`,
+        visibleUnits: (count) => `${count} visible unit${count === 1 ? "" : "s"}`,
+        allUnits: "All units",
+        allUnitsSubtitle: "Live values for the current amount across the category.",
+        recentConversions: "Recent conversions",
+        historySubtitle: "Saved locally in this browser.",
+        clearHistory: "Clear history",
+        pinEmpty: "Pin units to keep them close.",
+        useAsSource: "Use as source unit",
+        noHistory: "No saved conversions yet.",
+        reuse: "Reuse",
+        enterNumber: "Enter a number to start converting.",
+        source: "Source",
+        target: "Target",
+        noSearchResults: "No units match your search.",
+        targetUnit: "Target unit",
+        temperatureScale: "Temperature scale"
+      },
+      de: {
+        locale: "de-DE",
+        languageName: "English",
+        title: "Einheitenrechner",
+        description: "Umfangreicher Einheitenrechner für Länge, Masse, Temperatur, Fläche, Volumen, Geschwindigkeit, Zeit, Daten, Energie und Druck.",
+        eyebrow: "Statisches Werkzeug",
+        heroTitle: "Einheitenrechner",
+        heroSubtitle: "Schnelle Umrechnungen mit Favoriten, Verlauf, Genauigkeitseinstellung und Kategorienübersicht.",
+        toggleTheme: "Design wechseln",
+        themeSystem: "Design: System",
+        themeDark: "Design: Dunkel",
+        themeLight: "Design: Hell",
+        resetAll: "Alles zurücksetzen",
+        amount: "Wert",
+        amountPlaceholder: "Wert eingeben",
+        from: "Von",
+        to: "Nach",
+        swapUnits: "Einheiten tauschen",
+        precision: "Genauigkeit",
+        decimals: (count) => `${count} Dezimalstelle${count === 1 ? "" : "n"}`,
+        searchUnits: "Einheiten suchen",
+        searchPlaceholder: "Einheitenliste filtern",
+        pinFrom: "Von-Einheit merken",
+        pinTo: "Nach-Einheit merken",
+        unpinFrom: "Von-Einheit vergessen",
+        unpinTo: "Nach-Einheit vergessen",
+        copyResult: "Ergebnis kopieren",
+        copied: "Kopiert!",
+        primaryResult: "Hauptergebnis",
+        reverseCheck: "Rückrechnung",
+        reverseNote: "1 Zieleinheit zurück in die Quelleinheit umgerechnet.",
+        categorySnapshot: "Kategorieübersicht",
+        units: (count) => `${count} Einheit${count === 1 ? "" : "en"}`,
+        visibleUnits: (count) => `${count} sichtbare Einheit${count === 1 ? "" : "en"}`,
+        allUnits: "Alle Einheiten",
+        allUnitsSubtitle: "Live-Werte für den aktuellen Betrag in der ganzen Kategorie.",
+        recentConversions: "Letzte Umrechnungen",
+        historySubtitle: "Lokal in diesem Browser gespeichert.",
+        clearHistory: "Verlauf löschen",
+        pinEmpty: "Merke Einheiten, um sie griffbereit zu haben.",
+        useAsSource: "Als Quelleinheit verwenden",
+        noHistory: "Noch keine gespeicherten Umrechnungen.",
+        reuse: "Wiederverwenden",
+        enterNumber: "Gib eine Zahl ein, um zu starten.",
+        source: "Quelle",
+        target: "Ziel",
+        noSearchResults: "Keine Einheit passt zu deiner Suche.",
+        targetUnit: "Zieleinheit",
+        temperatureScale: "Temperaturskala"
+      }
+    };
+
+    const CATEGORY_TEXT = {
+      en: {
+        length: { label: "Length", description: "Measure distances, sizes, and travel spans.", hint: "Good for travel, maps, and everyday measurements." },
+        mass: { label: "Mass", description: "Mass and weight-style conversions for everyday use.", hint: "Useful for recipes, science, and shipping estimates." },
+        temperature: { label: "Temperature", description: "Convert between the common temperature scales.", hint: "Handles offset scales like Celsius and Fahrenheit correctly." },
+        area: { label: "Area", description: "Measure surface coverage for land, rooms, and plans.", hint: "Great for floor plans, gardens, and property estimates." },
+        volume: { label: "Volume", description: "Capacity and liquid volume conversions.", hint: "Handy for cooking, containers, and chemistry." },
+        speed: { label: "Speed", description: "Convert movement rates for roads, travel, and physics.", hint: "Includes familiar transport units in metric and imperial scales." },
+        datarate: { label: "Data rate", description: "Network and transfer throughput units.", hint: "Useful for internet plans, downloads, and streaming." },
+        time: { label: "Time", description: "Durations from tiny intervals to long spans.", hint: "Great for schedules, estimates, and work planning." },
+        data: { label: "Data", description: "Digital storage and transfer units.", hint: "Uses binary-style storage units and decimal multiples." },
+        energy: { label: "Energy", description: "Work, heat, and battery-related measurements.", hint: "Useful for nutrition labels and physics homework." },
+        pressure: { label: "Pressure", description: "Force per area for weather, tires, and engineering.", hint: "Includes atmospheric and SI pressure units." }
+      },
+      de: {
+        length: { label: "Länge", description: "Strecken, Größen und Reisedistanzen umrechnen.", hint: "Praktisch für Reisen, Karten und Alltagsmessungen." },
+        mass: { label: "Masse", description: "Masse- und Gewichtsumrechnungen für den Alltag.", hint: "Nützlich für Rezepte, Wissenschaft und Versand." },
+        temperature: { label: "Temperatur", description: "Zwischen gängigen Temperaturskalen umrechnen.", hint: "Behandelt Skalen mit Offset wie Celsius und Fahrenheit korrekt." },
+        area: { label: "Fläche", description: "Flächen für Grundstücke, Räume und Pläne messen.", hint: "Hilfreich für Grundrisse, Gärten und Immobilien." },
+        volume: { label: "Volumen", description: "Kapazitäten und Flüssigkeitsmengen umrechnen.", hint: "Praktisch für Kochen, Behälter und Chemie." },
+        speed: { label: "Geschwindigkeit", description: "Bewegungsraten für Verkehr, Reisen und Physik umrechnen.", hint: "Enthält bekannte Verkehrs-Einheiten in metrischen und imperialen Skalen." },
+        datarate: { label: "Datenrate", description: "Netzwerk- und Übertragungsraten umrechnen.", hint: "Nützlich für Internettarife, Downloads und Streaming." },
+        time: { label: "Zeit", description: "Dauern von kleinen Intervallen bis zu langen Zeiträumen.", hint: "Gut für Zeitpläne, Schätzungen und Arbeitsplanung." },
+        data: { label: "Daten", description: "Digitale Speicher- und Übertragungseinheiten.", hint: "Nutzt binäre Speichereinheiten und dezimale Vielfache." },
+        energy: { label: "Energie", description: "Arbeit, Wärme und batteriebezogene Messwerte.", hint: "Nützlich für Nährwertangaben und Physikaufgaben." },
+        pressure: { label: "Druck", description: "Kraft pro Fläche für Wetter, Reifen und Technik.", hint: "Enthält atmosphärische und SI-Druckeinheiten." }
+      }
+    };
+
+    const UNIT_TEXT_DE = {
+      mm: "Millimeter", cm: "Zentimeter", m: "Meter", km: "Kilometer", in: "Zoll", ft: "Fuß", yd: "Yard", mi: "Meile", nmi: "Seemeile",
+      mg: "Milligramm", g: "Gramm", kg: "Kilogramm", oz: "Unze", lb: "Pfund", st: "Stone", t: "Metrische Tonne",
+      C: "Celsius", F: "Fahrenheit", K: "Kelvin", R: "Rankine",
+      mm2: "Quadratmillimeter", cm2: "Quadratzentimeter", m2: "Quadratmeter", km2: "Quadratkilometer", in2: "Quadratzoll", ft2: "Quadratfuß", yd2: "Quadratyard", ac: "Acre", ha: "Hektar",
+      ml: "Milliliter", l: "Liter", m3: "Kubikmeter", tsp: "Teelöffel", tbsp: "Esslöffel", cup: "Cup", pt: "Pint", qt: "Quart", gal: "US-Gallone",
+      mps: "Meter pro Sekunde", kph: "Kilometer pro Stunde", mph: "Meilen pro Stunde", kn: "Knoten", fps: "Fuß pro Sekunde",
+      bps: "Bit pro Sekunde", Kbps: "Kilobit pro Sekunde", Mbps: "Megabit pro Sekunde", Gbps: "Gigabit pro Sekunde", Bps: "Byte pro Sekunde", KBps: "Kilobyte pro Sekunde", MBps: "Megabyte pro Sekunde",
+      ms: "Millisekunde", s: "Sekunde", min: "Minute", h: "Stunde", d: "Tag", wk: "Woche", mo: "Durchschnittsmonat", yr: "Durchschnittsjahr",
+      b: "Bit", B: "Byte", KB: "Kilobyte", MB: "Megabyte", GB: "Gigabyte", TB: "Terabyte", KiB: "Kibibyte", MiB: "Mebibyte", GiB: "Gibibyte", TiB: "Tebibyte",
+      J: "Joule", kJ: "Kilojoule", Wh: "Wattstunde", kWh: "Kilowattstunde", cal: "Kalorie", kcal: "Kilokalorie", BTU: "BTU",
+      Pa: "Pascal", kPa: "Kilopascal", MPa: "Megapascal", bar: "Bar", atm: "Atmosphäre", psi: "PSI", torr: "Torr"
+    };
+
+    const state = loadState();
+    const els = {
+      metaDescription: document.querySelector('meta[name="description"]'),
+      eyebrowText: document.getElementById("eyebrowText"),
+      heroTitle: document.getElementById("heroTitle"),
+      heroSubtitle: document.getElementById("heroSubtitle"),
+      categoryTabs: document.getElementById("categoryTabs"),
+      categoryTitle: document.getElementById("categoryTitle"),
+      categoryDescription: document.getElementById("categoryDescription"),
+      categoryHint: document.getElementById("categoryHint"),
+      categoryStats: document.getElementById("categoryStats"),
+      amountLabel: document.getElementById("amountLabel"),
+      amountInput: document.getElementById("amountInput"),
+      fromLabel: document.getElementById("fromLabel"),
+      fromUnit: document.getElementById("fromUnit"),
+      toLabel: document.getElementById("toLabel"),
+      toUnit: document.getElementById("toUnit"),
+      swapBtn: document.getElementById("swapBtn"),
+      precisionText: document.getElementById("precisionText"),
+      precisionRange: document.getElementById("precisionRange"),
+      precisionLabel: document.getElementById("precisionLabel"),
+      searchLabel: document.getElementById("searchLabel"),
+      searchInput: document.getElementById("searchInput"),
+      languageBtn: document.getElementById("languageBtn"),
+      themeBtn: document.getElementById("themeBtn"),
+      resetAllBtn: document.getElementById("resetAllBtn"),
+      pinFromBtn: document.getElementById("pinFromBtn"),
+      pinToBtn: document.getElementById("pinToBtn"),
+      copyBtn: document.getElementById("copyBtn"),
+      favoritesBar: document.getElementById("favoritesBar"),
+      quickPicks: document.getElementById("quickPicks"),
+      primaryResultLabel: document.getElementById("primaryResultLabel"),
+      mainResult: document.getElementById("mainResult"),
+      mainMeta: document.getElementById("mainMeta"),
+      reverseLabel: document.getElementById("reverseLabel"),
+      reverseResult: document.getElementById("reverseResult"),
+      reverseNote: document.getElementById("reverseNote"),
+      snapshotLabel: document.getElementById("snapshotLabel"),
+      formulaNote: document.getElementById("formulaNote"),
+      allUnitsTitle: document.getElementById("allUnitsTitle"),
+      allUnitsSubtitle: document.getElementById("allUnitsSubtitle"),
+      unitsGrid: document.getElementById("unitsGrid"),
+      resultsCount: document.getElementById("resultsCount"),
+      historyTitle: document.getElementById("historyTitle"),
+      historySubtitle: document.getElementById("historySubtitle"),
+      historyList: document.getElementById("historyList"),
+      clearHistoryBtn: document.getElementById("clearHistoryBtn")
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return cloneState(DEFAULT_STATE);
+        const parsed = JSON.parse(raw);
+        return {
+          ...cloneState(DEFAULT_STATE),
+          ...parsed,
+          favorites: parsed.favorites || {},
+          history: Array.isArray(parsed.history) ? parsed.history : []
+        };
+      } catch {
+        return cloneState(DEFAULT_STATE);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        category: state.category,
+        from: state.from,
+        to: state.to,
+        amount: state.amount,
+        precision: state.precision,
+        search: state.search,
+        theme: state.theme,
+        language: state.language,
+        favorites: state.favorites,
+        history: state.history.slice(0, 10)
+      }));
+    }
+
+    function getLanguage() {
+      return state.language === "de" ? "de" : "en";
+    }
+
+    function t(key, ...args) {
+      const value = UI_TEXT[getLanguage()][key];
+      return typeof value === "function" ? value(...args) : value;
+    }
+
+    function getLocale() {
+      return UI_TEXT[getLanguage()].locale;
+    }
+
+    function getCategory() {
+      return CATEGORIES[state.category] || CATEGORIES.length;
+    }
+
+    function getUnits(categoryKey = state.category) {
+      return (CATEGORIES[categoryKey] || CATEGORIES.length).units;
+    }
+
+    function getUnit(categoryKey, unitId) {
+      return getUnits(categoryKey).find((unit) => unit.id === unitId);
+    }
+
+    function getCurrentFavorites() {
+      return state.favorites[state.category] || [];
+    }
+
+    function categoryCopy(categoryKey = state.category) {
+      return CATEGORY_TEXT[getLanguage()][categoryKey] || CATEGORY_TEXT.en[categoryKey] || {};
+    }
+
+    function unitName(unit) {
+      if (!unit) return "";
+      return getLanguage() === "de" ? (UNIT_TEXT_DE[unit.id] || unit.name) : unit.name;
+    }
+
+    function unitOptionText(unit) {
+      return `${unitName(unit)} (${unit.id})`;
+    }
+
+    function renderStaticText() {
+      document.documentElement.lang = getLanguage();
+      document.title = t("title");
+      if (els.metaDescription) els.metaDescription.content = t("description");
+      els.eyebrowText.textContent = t("eyebrow");
+      els.heroTitle.textContent = t("heroTitle");
+      els.heroSubtitle.textContent = t("heroSubtitle");
+      els.languageBtn.textContent = t("languageName");
+      els.resetAllBtn.textContent = t("resetAll");
+      els.amountLabel.textContent = t("amount");
+      els.amountInput.placeholder = t("amountPlaceholder");
+      els.fromLabel.textContent = t("from");
+      els.toLabel.textContent = t("to");
+      els.swapBtn.setAttribute("aria-label", t("swapUnits"));
+      els.precisionText.textContent = t("precision");
+      els.searchLabel.textContent = t("searchUnits");
+      els.searchInput.placeholder = t("searchPlaceholder");
+      els.pinFromBtn.textContent = t("pinFrom");
+      els.pinToBtn.textContent = t("pinTo");
+      els.copyBtn.textContent = t("copyResult");
+      els.primaryResultLabel.textContent = t("primaryResult");
+      els.reverseLabel.textContent = t("reverseCheck");
+      els.reverseNote.textContent = t("reverseNote");
+      els.snapshotLabel.textContent = t("categorySnapshot");
+      els.allUnitsTitle.textContent = t("allUnits");
+      els.allUnitsSubtitle.textContent = t("allUnitsSubtitle");
+      els.historyTitle.textContent = t("recentConversions");
+      els.historySubtitle.textContent = t("historySubtitle");
+      els.clearHistoryBtn.textContent = t("clearHistory");
+    }
+
+    function setTheme(theme) {
+      state.theme = theme;
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const resolved = theme === "system" ? (prefersDark ? "dark" : "light") : theme;
+      document.documentElement.dataset.theme = resolved;
+      els.themeBtn.textContent = theme === "system" ? t("themeSystem") : theme === "dark" ? t("themeDark") : t("themeLight");
+      saveState();
+    }
+
+    function toggleTheme() {
+      const next = state.theme === "system" ? "dark" : state.theme === "dark" ? "light" : "system";
+      setTheme(next);
+    }
+
+    function formatNumber(value) {
+      if (!Number.isFinite(value)) return getLanguage() === "de" ? "Ungültig" : "Invalid";
+      const abs = Math.abs(value);
+      const precision = Number(state.precision);
+      if (value === 0) return "0";
+      if (abs >= 1e9 || abs < 1e-6) {
+        return value.toExponential(Math.min(precision, 8));
+      }
+      return new Intl.NumberFormat(getLocale(), {
+        maximumFractionDigits: precision,
+        minimumFractionDigits: 0
+      }).format(value);
+    }
+
+    function convertValue(amount, fromId, toId, categoryKey = state.category) {
+      const category = CATEGORIES[categoryKey];
+      if (!category) return NaN;
+
+      if (category.type === "temperature") {
+        return convertTemperature(amount, fromId, toId);
+      }
+
+      const from = getUnit(categoryKey, fromId);
+      const to = getUnit(categoryKey, toId);
+      if (!from || !to) return NaN;
+      const base = amount * from.factor;
+      return base / to.factor;
+    }
+
+    function convertTemperature(amount, fromId, toId) {
+      const toCelsius = {
+        C: (v) => v,
+        F: (v) => (v - 32) * 5 / 9,
+        K: (v) => v - 273.15,
+        R: (v) => (v - 491.67) * 5 / 9
+      };
+      const fromCelsius = {
+        C: (v) => v,
+        F: (v) => v * 9 / 5 + 32,
+        K: (v) => v + 273.15,
+        R: (v) => (v + 273.15) * 9 / 5
+      };
+      if (!toCelsius[fromId] || !fromCelsius[toId]) return NaN;
+      return fromCelsius[toId](toCelsius[fromId](amount));
+    }
+
+    function getFormulaText() {
+      const category = getCategory();
+      if (category.type === "temperature") {
+        return `${state.from} -> Celsius -> ${state.to}`;
+      }
+      const from = getUnit(state.category, state.from);
+      const to = getUnit(state.category, state.to);
+      if (!from || !to) return "";
+      const ratio = from.factor / to.factor;
+      return `1 ${from.id} = ${formatNumber(ratio)} ${to.id}`;
+    }
+
+    function getCategoryUnitsFiltered() {
+      const units = getUnits();
+      const term = state.search.trim().toLowerCase();
+      if (!term) return units;
+      return units.filter((unit) => {
+        const haystack = `${unit.id} ${unit.name} ${unitName(unit)}`.toLowerCase();
+        return haystack.includes(term);
+      });
+    }
+
+    function renderCategories() {
+      els.categoryTabs.innerHTML = "";
+      Object.entries(CATEGORIES).forEach(([key, category]) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `tab ${key === state.category ? "active" : ""}`;
+        btn.textContent = categoryCopy(key).label || category.label;
+        btn.addEventListener("click", () => switchCategory(key));
+        els.categoryTabs.appendChild(btn);
+      });
+    }
+
+    function renderSelectors() {
+      const units = getUnits();
+      const makeOptions = (selectedId) => units.map((unit) => {
+        const option = document.createElement("option");
+        option.value = unit.id;
+        option.textContent = unitOptionText(unit);
+        option.selected = unit.id === selectedId;
+        return option;
+      });
+
+      els.fromUnit.replaceChildren(...makeOptions(state.from));
+      els.toUnit.replaceChildren(...makeOptions(state.to));
+    }
+
+    function renderFavorites() {
+      const favorites = getCurrentFavorites();
+      els.favoritesBar.innerHTML = "";
+      if (!favorites.length) {
+        const empty = document.createElement("div");
+        empty.className = "notice";
+        empty.textContent = t("pinEmpty");
+        els.favoritesBar.appendChild(empty);
+        return;
+      }
+
+      favorites.forEach((unitId) => {
+        const unit = getUnit(state.category, unitId);
+        if (!unit) return;
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip small";
+        chip.textContent = unitOptionText(unit);
+        chip.title = t("useAsSource");
+        chip.addEventListener("click", () => {
+          state.from = unit.id;
+          if (state.from === state.to) {
+            state.to = pickDifferentUnit(unit.id);
+          }
+          syncUI(true);
+        });
+        els.favoritesBar.appendChild(chip);
+      });
+    }
+
+    function renderQuickPicks() {
+      els.quickPicks.innerHTML = "";
+      const category = getCategory();
+      category.quick.forEach((unitId) => {
+        const unit = getUnit(state.category, unitId);
+        if (!unit) return;
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = `chip small ${unit.id === state.from || unit.id === state.to ? "active" : ""}`;
+        chip.textContent = unitOptionText(unit);
+        chip.addEventListener("click", () => {
+          state.from = unit.id;
+          if (state.from === state.to) {
+            state.to = pickDifferentUnit(unit.id);
+          }
+          syncUI(true);
+        });
+        els.quickPicks.appendChild(chip);
+      });
+    }
+
+    function renderHistory() {
+      els.historyList.innerHTML = "";
+      if (!state.history.length) {
+        const empty = document.createElement("div");
+        empty.className = "notice";
+        empty.textContent = t("noHistory");
+        els.historyList.appendChild(empty);
+        return;
+      }
+
+      state.history.slice(0, 8).forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "history-item";
+
+        const main = document.createElement("div");
+        main.className = "history-main";
+
+        const value = document.createElement("div");
+        value.className = "history-value";
+        value.textContent = `${item.amount} ${item.fromId} = ${item.result} ${item.toId}`;
+
+        const meta = document.createElement("div");
+        meta.className = "history-meta";
+        meta.textContent = `${categoryCopy(item.category).label || item.categoryLabel} · ${item.time}`;
+
+        main.append(value, meta);
+
+        const action = document.createElement("button");
+        action.type = "button";
+        action.className = "btn";
+        action.textContent = t("reuse");
+        action.addEventListener("click", () => {
+          state.category = item.category;
+          state.from = item.fromId;
+          state.to = item.toId;
+          state.amount = item.amountRaw;
+          renderAll();
+        });
+
+        row.append(main, action);
+        els.historyList.appendChild(row);
+      });
+    }
+
+    function renderOutput(addToHistory = false) {
+      const amount = parseFloat(state.amount);
+      const category = getCategory();
+      const copy = categoryCopy();
+      const units = getCategoryUnitsFiltered();
+      els.categoryTitle.textContent = copy.label || category.label;
+      els.categoryDescription.textContent = copy.description || category.description;
+      els.categoryHint.textContent = copy.hint || category.hint;
+      els.categoryStats.textContent = t("units", category.units.length);
+      els.resultsCount.textContent = t("visibleUnits", units.length);
+      els.precisionLabel.textContent = t("decimals", state.precision);
+
+      const favorites = getCurrentFavorites();
+      els.pinFromBtn.textContent = favorites.includes(state.from) ? t("unpinFrom") : t("pinFrom");
+      els.pinToBtn.textContent = favorites.includes(state.to) ? t("unpinTo") : t("pinTo");
+
+      const validAmount = Number.isFinite(amount);
+      if (!validAmount) {
+        els.mainResult.textContent = "--";
+        els.reverseResult.textContent = "--";
+        els.formulaNote.textContent = t("enterNumber");
+        els.mainMeta.textContent = "";
+        renderUnitGrid([]);
+        return;
+      }
+
+      const converted = convertValue(amount, state.from, state.to);
+      const reverse = convertValue(1, state.to, state.from);
+      const mainText = `${formatNumber(amount)} ${state.from} = ${formatNumber(converted)} ${state.to}`;
+
+      els.mainResult.textContent = mainText;
+      els.reverseResult.textContent = `${formatNumber(reverse)} ${state.from}`;
+      els.formulaNote.textContent = getFormulaText();
+
+      els.mainMeta.innerHTML = "";
+
+      const metaParts = [
+        `${t("source")}: ${unitName(getUnit(state.category, state.from)) || state.from}`,
+        `${t("target")}: ${unitName(getUnit(state.category, state.to)) || state.to}`
+      ];
+      metaParts.forEach((part) => {
+        const span = document.createElement("span");
+        span.textContent = part;
+        els.mainMeta.appendChild(span);
+      });
+
+      renderUnitGrid(units, amount);
+      if (addToHistory) {
+        rememberHistory(amount, converted);
+        renderHistory();
+      }
+      saveState();
+    }
+
+    function renderUnitGrid(units, amount = 0) {
+      els.unitsGrid.innerHTML = "";
+      const category = getCategory();
+      if (!units.length) {
+        const empty = document.createElement("div");
+        empty.className = "notice";
+        empty.textContent = t("noSearchResults");
+        els.unitsGrid.appendChild(empty);
+        return;
+      }
+
+      units.forEach((unit) => {
+        const value = convertValue(amount, state.from, unit.id);
+        const card = document.createElement("article");
+        card.className = `unit-card ${unit.id === state.to ? "active" : ""}`;
+
+        const name = document.createElement("div");
+        name.className = "unit-name";
+        name.textContent = unitName(unit);
+
+        const id = document.createElement("div");
+        id.className = "unit-id";
+        id.textContent = unit.id;
+
+        const val = document.createElement("div");
+        val.className = "unit-value";
+        val.textContent = Number.isFinite(value) ? `${formatNumber(value)} ${unit.id}` : "--";
+
+        card.append(name, id, val);
+        if (category.type === "temperature") {
+          const hint = document.createElement("div");
+          hint.className = "notice";
+          hint.textContent = unit.id === state.to ? t("targetUnit") : t("temperatureScale");
+          card.appendChild(hint);
+        }
+
+        els.unitsGrid.appendChild(card);
+      });
+    }
+
+    function rememberHistory(amount, result) {
+      if (!Number.isFinite(amount) || !Number.isFinite(result)) return;
+      const raw = {
+        category: state.category,
+        categoryLabel: categoryCopy().label || getCategory().label,
+        amountRaw: state.amount,
+        amount: formatNumber(amount),
+        fromId: state.from,
+        toId: state.to,
+        result: formatNumber(result),
+        time: new Date().toLocaleString(getLocale(), { dateStyle: "medium", timeStyle: "short" })
+      };
+
+      const key = `${raw.category}|${raw.amountRaw}|${raw.fromId}|${raw.toId}|${raw.result}`;
+      state.history = [{ ...raw, _key: key }, ...state.history.filter((item) => item._key !== key)].slice(0, 8);
+    }
+
+    function pickDifferentUnit(currentId) {
+      const units = getUnits();
+      const fallback = units.find((unit) => unit.id !== currentId) || units[0];
+      return fallback ? fallback.id : currentId;
+    }
+
+    function switchCategory(key) {
+      const previous = state.category;
+      state.category = key;
+      const units = getUnits(key);
+      const storedFrom = CATEGORIES[key].quick.includes(state.from) ? state.from : (units[0] && units[0].id);
+      const storedTo = CATEGORIES[key].quick.includes(state.to) ? state.to : pickDifferentUnit(storedFrom);
+      state.from = getUnit(key, storedFrom) ? storedFrom : units[0]?.id || "";
+      state.to = getUnit(key, storedTo) ? storedTo : pickDifferentUnit(state.from);
+      state.search = "";
+      els.searchInput.value = "";
+      renderAll();
+      if (previous !== key) saveState();
+    }
+
+    function toggleFavorite(which) {
+      const unitId = which === "from" ? state.from : state.to;
+      const list = new Set(getCurrentFavorites());
+      if (list.has(unitId)) {
+        list.delete(unitId);
+      } else {
+        list.add(unitId);
+      }
+      state.favorites[state.category] = [...list];
+      renderFavorites();
+      renderQuickPicks();
+      renderOutput();
+      saveState();
+    }
+
+    function copyResult() {
+      const amount = parseFloat(state.amount);
+      if (!Number.isFinite(amount)) return;
+      const converted = convertValue(amount, state.from, state.to);
+      const text = `${formatNumber(amount)} ${state.from} = ${formatNumber(converted)} ${state.to}`;
+      navigator.clipboard.writeText(text).then(() => {
+        els.copyBtn.textContent = t("copied");
+        setTimeout(() => (els.copyBtn.textContent = t("copyResult")), 1200);
+      }).catch((err) => {
+        console.error("Failed to copy text: ", err);
+      });
+    }
+
+    function resetAll() {
+      Object.assign(state, cloneState(DEFAULT_STATE));
+      applyInputState();
+      renderAll();
+      saveState();
+    }
+
+    function clearHistory() {
+      state.history = [];
+      renderHistory();
+      saveState();
+    }
+
+    function applyInputState() {
+      els.amountInput.value = state.amount;
+      els.precisionRange.value = String(state.precision);
+      els.searchInput.value = state.search;
+    }
+
+    function syncUI(addToHistory = false) {
+      renderCategories();
+      renderSelectors();
+      renderFavorites();
+      renderQuickPicks();
+      renderOutput(addToHistory);
+    }
+
+    function renderAll(addToHistory = false) {
+      renderStaticText();
+      setTheme(state.theme);
+      applyInputState();
+      renderCategories();
+      renderSelectors();
+      renderFavorites();
+      renderQuickPicks();
+      renderOutput(addToHistory);
+      renderHistory();
+    }
+
+    function attachEvents() {
+      els.amountInput.addEventListener("input", (event) => {
+        state.amount = event.target.value;
+        renderOutput(false);
+        saveState();
+      });
+
+      els.amountInput.addEventListener("change", (event) => {
+        state.amount = event.target.value;
+        renderOutput(true);
+        saveState();
+      });
+
+      els.fromUnit.addEventListener("change", (event) => {
+        state.from = event.target.value;
+        if (state.from === state.to) state.to = pickDifferentUnit(state.from);
+        syncUI(true);
+      });
+
+      els.toUnit.addEventListener("change", (event) => {
+        state.to = event.target.value;
+        if (state.from === state.to) state.from = pickDifferentUnit(state.to);
+        syncUI(true);
+      });
+
+      els.swapBtn.addEventListener("click", () => {
+        const temp = state.from;
+        state.from = state.to;
+        state.to = temp;
+        syncUI(true);
+      });
+
+      els.precisionRange.addEventListener("input", (event) => {
+        state.precision = Number(event.target.value);
+        els.precisionLabel.textContent = t("decimals", state.precision);
+        renderOutput();
+        saveState();
+      });
+
+      els.searchInput.addEventListener("input", (event) => {
+        state.search = event.target.value;
+        renderOutput();
+        saveState();
+      });
+
+      els.languageBtn.addEventListener("click", () => {
+        state.language = getLanguage() === "de" ? "en" : "de";
+        renderAll();
+        saveState();
+      });
+      els.themeBtn.addEventListener("click", toggleTheme);
+      els.resetAllBtn.addEventListener("click", resetAll);
+      els.pinFromBtn.addEventListener("click", () => toggleFavorite("from"));
+      els.pinToBtn.addEventListener("click", () => toggleFavorite("to"));
+      els.copyBtn.addEventListener("click", copyResult);
+      els.clearHistoryBtn.addEventListener("click", clearHistory);
+
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+        if (state.theme === "system") setTheme("system");
+      });
+    }
+
+    function initDefaults() {
+      const category = CATEGORIES[state.category] ? state.category : "length";
+      state.category = category;
+
+      const units = getUnits();
+      if (!getUnit(category, state.from)) state.from = units[0]?.id || "";
+      if (!getUnit(category, state.to) || state.to === state.from) {
+        state.to = units.find((unit) => unit.id !== state.from)?.id || state.from;
+      }
+
+      if (!state.amount) state.amount = DEFAULT_STATE.amount;
+      if (!Number.isFinite(Number(state.precision))) state.precision = DEFAULT_STATE.precision;
+      if (typeof state.search !== "string") state.search = "";
+      if (!state.theme) state.theme = "system";
+      if (!["en", "de"].includes(state.language)) state.language = "en";
+      if (!state.favorites || typeof state.favorites !== "object") state.favorites = {};
+      if (!Array.isArray(state.history)) state.history = [];
+    }
+
+    initDefaults();
+    attachEvents();
+    renderAll();
+  </script>
+</body>
+</html>
