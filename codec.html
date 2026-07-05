@@ -1,0 +1,1346 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Feature-rich local encoder and decoder for Base64, URLs, HTML entities, Hexadecimal, Binary, and JWT tokens.">
+  <meta name="theme-color" content="#0f172a">
+  <title>Data Codec</title>
+  <script>
+    (function() {
+      try {
+        const raw = localStorage.getItem("codec-v1");
+        const theme = raw ? JSON.parse(raw).theme : "system";
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const resolved = theme === "system" ? (prefersDark ? "dark" : "light") : theme;
+        document.documentElement.dataset.theme = resolved;
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --bg-2: #eef2ff;
+      --surface: rgba(255, 255, 255, 0.88);
+      --surface-strong: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: rgba(148, 163, 184, 0.25);
+      --accent: #6366f1;
+      --accent-2: #8b5cf6;
+      --success: #059669;
+      --danger: #ef4444;
+      --shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+      --radius: 24px;
+      --radius-sm: 16px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #020617;
+      --bg-2: #0f172a;
+      --surface: rgba(15, 23, 42, 0.78);
+      --surface-strong: #111827;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --border: rgba(148, 163, 184, 0.18);
+      --accent: #818cf8;
+      --accent-2: #a78bfa;
+      --success: #34d399;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      color-scheme: light dark;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(99, 102, 241, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(139, 92, 246, 0.14), transparent 28%),
+        linear-gradient(180deg, var(--bg), var(--bg-2));
+      color: var(--text);
+    }
+
+    button,
+    textarea,
+    select,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 18px 0 42px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      border-radius: var(--radius);
+    }
+
+    .hero {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      align-items: center;
+      grid-template-columns: 1fr auto;
+      margin-bottom: 16px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 0.72rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.02;
+      margin-bottom: 10px;
+    }
+
+    .hero p,
+    .section-subtitle,
+    .muted {
+      color: var(--muted);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 0.82rem 1.2rem;
+      border-radius: 14px;
+      background: var(--surface-strong);
+      color: var(--text);
+      border: 1px solid var(--border);
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      border: 0;
+    }
+
+    .btn.ghost {
+      background: transparent;
+    }
+
+    .toolbar {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .tab {
+      flex: 0 0 auto;
+      padding: 0.85rem 1.2rem;
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+    }
+
+    .workspace-card {
+      padding: 24px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .mode-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .segmented-control {
+      display: inline-flex;
+      background: var(--bg-2);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .segment-btn {
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .segment-btn.active {
+      background: var(--surface-strong);
+      color: var(--text);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    }
+
+    .options-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .option-checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .option-checkbox-label input {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+    }
+
+    .select-dropdown {
+      padding: 0.5rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text);
+      outline: none;
+    }
+
+    .main-grid {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .col-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+    }
+
+    .textarea-wrap {
+      position: relative;
+      flex-grow: 1;
+    }
+
+    .textarea {
+      width: 100%;
+      height: 280px;
+      min-height: 200px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text);
+      padding: 16px;
+      outline: none;
+      resize: vertical;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.9rem;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .textarea:focus {
+      border-color: rgba(99, 102, 241, 0.55);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+    }
+
+    .actions-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stats {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 24px;
+      text-align: center;
+      background: var(--surface-strong);
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .dropzone.highlight {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .dropzone p {
+      font-size: 0.92rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .dropzone-icon {
+      font-size: 2rem;
+      color: var(--accent);
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .error-card {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: var(--danger);
+      font-size: 0.92rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .swap-btn-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .jwt-split-grid {
+      display: grid;
+      gap: 16px;
+      height: 100%;
+    }
+
+    .jwt-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .jwt-pane span {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .jwt-textarea {
+      height: 130px;
+      min-height: 100px;
+    }
+
+    @media (max-width: 980px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      .swap-btn-wrap {
+        margin: 12px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="hero card">
+      <div>
+        <p class="eyebrow" id="eyebrowText">Codec Utility</p>
+        <h1 id="heroTitle">Data Codec</h1>
+        <p class="section-subtitle" id="heroSubtitle">Fast, local converter for encoding and decoding data formats safely in your browser.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn ghost" id="languageBtn" type="button">Deutsch</button>
+        <button class="btn ghost" id="themeBtn" type="button">Toggle theme</button>
+        <button class="btn primary" id="resetAllBtn" type="button">Reset</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="tabs card" id="codecTabs"></div>
+
+      <main class="card workspace-card">
+        <div class="mode-bar">
+          <div class="segmented-control" id="modeControl">
+            <button class="segment-btn active" id="modeEncode" type="button">Encode</button>
+            <button class="segment-btn" id="modeDecode" type="button">Decode</button>
+          </div>
+
+          <div class="options-group" id="optionsGroup">
+            <!-- Dynamic options show here -->
+            <label class="option-checkbox-label hidden" id="b64UrlSafeLabel">
+              <input type="checkbox" id="b64UrlSafe">
+              <span>URL-Safe</span>
+            </label>
+            <label class="option-checkbox-label hidden" id="b64DataUrlLabel">
+              <input type="checkbox" id="b64DataUrl">
+              <span>Include Data-URL prefix</span>
+            </label>
+            <label class="option-checkbox-label hidden" id="urlEncodeAllLabel">
+              <input type="checkbox" id="urlEncodeAll" checked>
+              <span>Encode all characters</span>
+            </label>
+            
+            <div class="hidden" id="hexSeparatorWrapper">
+              <label for="hexSeparator" style="font-size: 0.9rem; font-weight: 600; margin-right: 6px;" id="hexSepLabel">Separator:</label>
+              <select class="select-dropdown" id="hexSeparator">
+                <option value="">None</option>
+                <option value=" ">Space</option>
+                <option value=":">Colon</option>
+              </select>
+            </div>
+
+            <div class="hidden" id="binSeparatorWrapper">
+              <label for="binSeparator" style="font-size: 0.9rem; font-weight: 600; margin-right: 6px;" id="binSepLabel">Separator:</label>
+              <select class="select-dropdown" id="binSeparator">
+                <option value=" ">Space</option>
+                <option value="">None</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="error-card hidden" id="errorContainer">
+          <span aria-hidden="true">⚠️</span>
+          <span id="errorMessage">Error message here</span>
+        </div>
+
+        <div class="main-grid">
+          <!-- INPUT COLUMN -->
+          <div class="column">
+            <div class="col-header">
+              <span id="inputLabel">Input</span>
+              <span class="stats" id="inputStats">0 chars</span>
+            </div>
+            
+            <!-- File dropzone for Base64 Encoding -->
+            <div class="dropzone hidden" id="fileDropzone">
+              <div class="dropzone-icon">📥</div>
+              <p id="dropzoneText">Drag & drop any file here, or click to browse</p>
+              <span class="stats" id="dropzoneLimit">Max 10 MB</span>
+              <input type="file" class="file-input" id="fileInput">
+            </div>
+
+            <div class="textarea-wrap" id="inputTextareaWrapper">
+              <textarea class="textarea" id="inputText" placeholder="Enter text here..."></textarea>
+            </div>
+
+            <div class="actions-row">
+              <div class="action-buttons">
+                <button class="btn" id="pasteBtn" type="button">Paste</button>
+                <button class="btn" id="clearBtn" type="button">Clear</button>
+              </div>
+              <div class="swap-btn-wrap">
+                <button class="btn" id="swapBtn" type="button" title="Swap input and output">⇆</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- OUTPUT COLUMN -->
+          <div class="column">
+            <div class="col-header">
+              <span id="outputLabel">Output</span>
+              <span class="stats" id="outputStats">0 chars</span>
+            </div>
+            
+            <!-- Standard Output Textarea -->
+            <div class="textarea-wrap" id="standardOutputWrapper">
+              <textarea class="textarea" id="outputText" readonly placeholder="Output will appear here..."></textarea>
+            </div>
+
+            <!-- JWT Split Output View -->
+            <div class="jwt-split-grid hidden" id="jwtOutputWrapper">
+              <div class="jwt-pane">
+                <span id="jwtHeaderLabel">Header (JSON)</span>
+                <textarea class="textarea jwt-textarea" id="jwtHeader" readonly placeholder="JWT Header"></textarea>
+              </div>
+              <div class="jwt-pane">
+                <span id="jwtPayloadLabel">Payload (JSON)</span>
+                <textarea class="textarea jwt-textarea" id="jwtPayload" readonly placeholder="JWT Payload"></textarea>
+              </div>
+            </div>
+
+            <div class="actions-row">
+              <div class="action-buttons">
+                <button class="btn" id="copyBtn" type="button">Copy</button>
+                <button class="btn" id="downloadBtn" type="button">Download</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "codec-v1";
+
+    const DEFAULT_STATE = {
+      tab: "base64",
+      mode: "encode",
+      input: "",
+      theme: "system",
+      language: "en",
+      b64UrlSafe: false,
+      b64DataUrl: false,
+      urlEncodeAll: true,
+      hexSeparator: "",
+      binSeparator: " "
+    };
+
+    const UI_TEXT = {
+      en: {
+        title: "Data Codec",
+        description: "Feature-rich local encoder and decoder for Base64, URLs, HTML entities, Hexadecimal, Binary, and JWT tokens.",
+        eyebrow: "Codec Utility",
+        heroTitle: "Data Codec",
+        heroSubtitle: "Fast, local converter for encoding and decoding data formats safely in your browser.",
+        toggleTheme: "Toggle theme",
+        themeSystem: "Theme: system",
+        themeDark: "Theme: dark",
+        themeLight: "Theme: light",
+        reset: "Reset",
+        encode: "Encode",
+        decode: "Decode",
+        input: "Input",
+        output: "Output",
+        paste: "Paste",
+        clear: "Clear",
+        copy: "Copy",
+        copied: "Copied!",
+        download: "Download",
+        dragDrop: "Drag & drop any file here, or click to browse",
+        maxSize: "Max 10 MB",
+        invalidFile: "File is too large (maximum 10 MB).",
+        inputPlaceholder: "Enter text here...",
+        outputPlaceholder: "Output will appear here...",
+        charsCount: (count) => `${count} char${count === 1 ? "" : "s"}`,
+        wordsCount: (count) => `${count} word${count === 1 ? "" : "s"}`,
+        invalidB64: "Invalid Base64 format.",
+        invalidHex: "Invalid Hex format (must be even length of valid hexadecimal characters).",
+        invalidBin: "Invalid Binary format (must be multiples of 8 bits composed of 0 and 1).",
+        invalidJwt: "Invalid JWT format (JSON Web Token must consist of 3 parts separated by dots).",
+        jwtHeader: "Header (JSON)",
+        jwtPayload: "Payload (JSON)",
+        jwtPlaceholder: "JWT payload",
+        failedCopy: "Failed to copy text.",
+        failedDownload: "Download failed.",
+        dataUrlOption: "Include Data-URL prefix",
+        urlSafeOption: "URL-Safe",
+        encodeAllOption: "Encode all characters",
+        hexSepLabel: "Separator:",
+        binSepLabel: "Separator:",
+        spaceSep: "Space",
+        noneSep: "None",
+        colonSep: "Colon"
+      },
+      de: {
+        title: "Daten-Codec",
+        description: "Umfangreicher lokaler Kodierer und Dekodierer für Base64, URLs, HTML-Entities, Hexadezimal, Binär und JWT-Token.",
+        eyebrow: "Codec-Werkzeug",
+        heroTitle: "Daten-Codec",
+        heroSubtitle: "Schneller, lokaler Konverter zum sicheren Kodieren und Dekodieren von Datenformaten in deinem Browser.",
+        toggleTheme: "Design wechseln",
+        themeSystem: "Design: System",
+        themeDark: "Design: Dunkel",
+        themeLight: "Design: Hell",
+        reset: "Zurücksetzen",
+        encode: "Kodieren",
+        decode: "Dekodieren",
+        input: "Eingabe",
+        output: "Ausgabe",
+        paste: "Einfügen",
+        clear: "Löschen",
+        copy: "Kopieren",
+        copied: "Kopiert!",
+        download: "Herunterladen",
+        dragDrop: "Datei hierher ziehen oder klicken zum Auswählen",
+        maxSize: "Max. 10 MB",
+        invalidFile: "Die Datei ist zu groß (maximal 10 MB).",
+        inputPlaceholder: "Text hier eingeben...",
+        outputPlaceholder: "Das Ergebnis wird hier angezeigt...",
+        charsCount: (count) => `${count} Zeichen`,
+        wordsCount: (count) => `${count} Wort${count === 1 ? "" : "er"}`,
+        invalidB64: "Ungültiges Base64-Format.",
+        invalidHex: "Ungültiges Hex-Format (muss eine gerade Anzahl gültiger Hex-Zeichen sein).",
+        invalidBin: "Ungültiges Binär-Format (muss ein Vielfaches von 8 Bits sein, bestehend aus 0 und 1).",
+        invalidJwt: "Ungültiges JWT-Format (JSON Web Token müssen aus 3 durch Punkte getrennten Teilen bestehen).",
+        jwtHeader: "Header (JSON)",
+        jwtPayload: "Payload (JSON)",
+        jwtPlaceholder: "JWT-Nutzlast",
+        failedCopy: "Kopieren fehlgeschlagen.",
+        failedDownload: "Herunterladen fehlgeschlagen.",
+        dataUrlOption: "Mit Data-URL-Präfix",
+        urlSafeOption: "URL-sicher",
+        encodeAllOption: "Alle Zeichen kodieren",
+        hexSepLabel: "Trennzeichen:",
+        binSepLabel: "Trennzeichen:",
+        spaceSep: "Leerzeichen",
+        noneSep: "Keines",
+        colonSep: "Doppelpunkt"
+      }
+    };
+
+    const TABS = {
+      base64: { en: "Base64", de: "Base64" },
+      url: { en: "URL", de: "URL" },
+      html: { en: "HTML Entities", de: "HTML-Entities" },
+      hex: { en: "Hex", de: "Hex" },
+      binary: { en: "Binary", de: "Binär" },
+      jwt: { en: "JWT Decoder", de: "JWT-Dekodierer" }
+    };
+
+    const state = loadState();
+    const els = {
+      metaDescription: document.querySelector('meta[name="description"]'),
+      eyebrowText: document.getElementById("eyebrowText"),
+      heroTitle: document.getElementById("heroTitle"),
+      heroSubtitle: document.getElementById("heroSubtitle"),
+      languageBtn: document.getElementById("languageBtn"),
+      themeBtn: document.getElementById("themeBtn"),
+      resetAllBtn: document.getElementById("resetAllBtn"),
+      codecTabs: document.getElementById("codecTabs"),
+      modeControl: document.getElementById("modeControl"),
+      modeEncode: document.getElementById("modeEncode"),
+      modeDecode: document.getElementById("modeDecode"),
+      optionsGroup: document.getElementById("optionsGroup"),
+      b64UrlSafeLabel: document.getElementById("b64UrlSafeLabel"),
+      b64UrlSafe: document.getElementById("b64UrlSafe"),
+      b64DataUrlLabel: document.getElementById("b64DataUrlLabel"),
+      b64DataUrl: document.getElementById("b64DataUrl"),
+      urlEncodeAllLabel: document.getElementById("urlEncodeAllLabel"),
+      urlEncodeAll: document.getElementById("urlEncodeAll"),
+      hexSeparatorWrapper: document.getElementById("hexSeparatorWrapper"),
+      hexSeparator: document.getElementById("hexSeparator"),
+      hexSepLabel: document.getElementById("hexSepLabel"),
+      binSeparatorWrapper: document.getElementById("binSeparatorWrapper"),
+      binSeparator: document.getElementById("binSeparator"),
+      binSepLabel: document.getElementById("binSepLabel"),
+      errorContainer: document.getElementById("errorContainer"),
+      errorMessage: document.getElementById("errorMessage"),
+      inputLabel: document.getElementById("inputLabel"),
+      inputStats: document.getElementById("inputStats"),
+      inputText: document.getElementById("inputText"),
+      pasteBtn: document.getElementById("pasteBtn"),
+      clearBtn: document.getElementById("clearBtn"),
+      swapBtn: document.getElementById("swapBtn"),
+      outputLabel: document.getElementById("outputLabel"),
+      outputStats: document.getElementById("outputStats"),
+      outputText: document.getElementById("outputText"),
+      copyBtn: document.getElementById("copyBtn"),
+      downloadBtn: document.getElementById("downloadBtn"),
+      fileDropzone: document.getElementById("fileDropzone"),
+      dropzoneText: document.getElementById("dropzoneText"),
+      dropzoneLimit: document.getElementById("dropzoneLimit"),
+      fileInput: document.getElementById("fileInput"),
+      inputTextareaWrapper: document.getElementById("inputTextareaWrapper"),
+      standardOutputWrapper: document.getElementById("standardOutputWrapper"),
+      jwtOutputWrapper: document.getElementById("jwtOutputWrapper"),
+      jwtHeader: document.getElementById("jwtHeader"),
+      jwtHeaderLabel: document.getElementById("jwtHeaderLabel"),
+      jwtPayload: document.getElementById("jwtPayload"),
+      jwtPayloadLabel: document.getElementById("jwtPayloadLabel")
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { ...DEFAULT_STATE };
+        return { ...DEFAULT_STATE, ...JSON.parse(raw) };
+      } catch {
+        return { ...DEFAULT_STATE };
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function getLanguage() {
+      return state.language === "de" ? "de" : "en";
+    }
+
+    function t(key, ...args) {
+      const value = UI_TEXT[getLanguage()][key];
+      return typeof value === "function" ? value(...args) : value;
+    }
+
+    function renderStaticText() {
+      document.documentElement.lang = getLanguage();
+      document.title = t("title");
+      if (els.metaDescription) els.metaDescription.content = t("description");
+      els.eyebrowText.textContent = t("eyebrow");
+      els.heroTitle.textContent = t("heroTitle");
+      els.heroSubtitle.textContent = t("heroSubtitle");
+      els.languageBtn.textContent = getLanguage() === "de" ? "English" : "Deutsch";
+      els.resetAllBtn.textContent = t("reset");
+      
+      els.modeEncode.textContent = t("encode");
+      els.modeDecode.textContent = t("decode");
+      els.inputLabel.textContent = t("input");
+      els.outputLabel.textContent = t("output");
+      els.pasteBtn.textContent = t("paste");
+      els.clearBtn.textContent = t("clear");
+      els.copyBtn.textContent = t("copy");
+      els.downloadBtn.textContent = t("download");
+      
+      els.dropzoneText.textContent = t("dragDrop");
+      els.dropzoneLimit.textContent = t("maxSize");
+      
+      els.inputText.placeholder = t("inputPlaceholder");
+      els.outputText.placeholder = t("outputPlaceholder");
+
+      els.jwtHeaderLabel.textContent = t("jwtHeader");
+      els.jwtPayloadLabel.textContent = t("jwtPayload");
+
+      els.b64UrlSafeLabel.querySelector("span").textContent = t("urlSafeOption");
+      els.b64DataUrlLabel.querySelector("span").textContent = t("dataUrlOption");
+      els.urlEncodeAllLabel.querySelector("span").textContent = t("encodeAllOption");
+      els.hexSepLabel.textContent = t("hexSepLabel");
+      els.binSepLabel.textContent = t("binSepLabel");
+
+      // Update options dropdown texts
+      els.hexSeparator.options[0].textContent = t("noneSep");
+      els.hexSeparator.options[1].textContent = t("spaceSep");
+      els.hexSeparator.options[2].textContent = t("colonSep");
+
+      els.binSeparator.options[0].textContent = t("spaceSep");
+      els.binSeparator.options[1].textContent = t("noneSep");
+    }
+
+    function setTheme(theme) {
+      state.theme = theme;
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const resolved = theme === "system" ? (prefersDark ? "dark" : "light") : theme;
+      document.documentElement.dataset.theme = resolved;
+      els.themeBtn.textContent = theme === "system" ? t("themeSystem") : theme === "dark" ? t("themeDark") : t("themeLight");
+      saveState();
+    }
+
+    function toggleTheme() {
+      const next = state.theme === "system" ? "dark" : state.theme === "dark" ? "light" : "system";
+      setTheme(next);
+    }
+
+    function renderTabs() {
+      els.codecTabs.innerHTML = "";
+      Object.entries(TABS).forEach(([key, tab]) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `tab ${key === state.tab ? "active" : ""}`;
+        btn.textContent = tab[getLanguage()];
+        btn.addEventListener("click", () => switchTab(key));
+        els.codecTabs.appendChild(btn);
+      });
+    }
+
+    function switchTab(key) {
+      state.tab = key;
+      if (key === "jwt") {
+        state.mode = "decode"; // JWT is only a decoder
+      }
+      renderTabs();
+      updateOptionsVisibility();
+      updateModeButtons();
+      processConversion();
+      saveState();
+    }
+
+    function updateOptionsVisibility() {
+      // Hide all options first
+      els.b64UrlSafeLabel.classList.add("hidden");
+      els.b64DataUrlLabel.classList.add("hidden");
+      els.urlEncodeAllLabel.classList.add("hidden");
+      els.hexSeparatorWrapper.classList.add("hidden");
+      els.binSeparatorWrapper.classList.add("hidden");
+
+      if (state.tab === "base64") {
+        els.b64UrlSafeLabel.classList.remove("hidden");
+        if (state.mode === "encode") {
+          els.b64DataUrlLabel.classList.remove("hidden");
+        }
+      } else if (state.tab === "url" && state.mode === "encode") {
+        els.urlEncodeAllLabel.classList.remove("hidden");
+      } else if (state.tab === "hex" && state.mode === "encode") {
+        els.hexSeparatorWrapper.classList.remove("hidden");
+      } else if (state.tab === "binary" && state.mode === "encode") {
+        els.binSeparatorWrapper.classList.remove("hidden");
+      }
+    }
+
+    function updateModeButtons() {
+      if (state.tab === "jwt") {
+        els.modeControl.classList.add("hidden");
+      } else {
+        els.modeControl.classList.remove("hidden");
+        els.modeEncode.className = `segment-btn ${state.mode === "encode" ? "active" : ""}`;
+        els.modeDecode.className = `segment-btn ${state.mode === "decode" ? "active" : ""}`;
+      }
+
+      // Base64 file dropzone visibility
+      if (state.tab === "base64" && state.mode === "encode") {
+        els.fileDropzone.classList.remove("hidden");
+        els.inputTextareaWrapper.classList.add("hidden");
+      } else {
+        els.fileDropzone.classList.add("hidden");
+        els.inputTextareaWrapper.classList.remove("hidden");
+      }
+
+      // JWT layout visibility
+      if (state.tab === "jwt") {
+        els.standardOutputWrapper.classList.add("hidden");
+        els.jwtOutputWrapper.classList.remove("hidden");
+        els.swapBtn.classList.add("hidden");
+      } else {
+        els.standardOutputWrapper.classList.remove("hidden");
+        els.jwtOutputWrapper.classList.add("hidden");
+        els.swapBtn.classList.remove("hidden");
+      }
+    }
+
+    // --- CODER DECODER LOGIC ---
+
+    function base64Encode(str, urlSafe = false) {
+      const utf8Bytes = new TextEncoder().encode(str);
+      let binary = "";
+      for (let i = 0; i < utf8Bytes.length; i++) {
+        binary += String.fromCharCode(utf8Bytes[i]);
+      }
+      let b64 = btoa(binary);
+      if (urlSafe) {
+        b64 = b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      }
+      return b64;
+    }
+
+    function base64Decode(str) {
+      let input = str.trim();
+      input = input.replace(/-/g, "+").replace(/_/g, "/");
+      while (input.length % 4) {
+        input += "=";
+      }
+      try {
+        const binary = atob(input);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return new TextDecoder().decode(bytes);
+      } catch (e) {
+        throw new Error(t("invalidB64"));
+      }
+    }
+
+    function htmlEscape(str) {
+      return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+    }
+
+    function htmlUnescape(str) {
+      const doc = new DOMParser().parseFromString(str, "text/html");
+      return doc.documentElement.textContent || "";
+    }
+
+    function hexEncode(str, separator = "") {
+      const bytes = new TextEncoder().encode(str);
+      return Array.from(bytes)
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join(separator);
+    }
+
+    function hexDecode(str) {
+      const cleaned = str.replace(/[^0-9a-fA-F]/g, "");
+      if (cleaned.length % 2 !== 0) {
+        throw new Error(t("invalidHex"));
+      }
+      const bytes = new Uint8Array(cleaned.length / 2);
+      for (let i = 0; i < cleaned.length; i += 2) {
+        bytes[i / 2] = parseInt(cleaned.slice(i, i + 2), 16);
+      }
+      return new TextDecoder().decode(bytes);
+    }
+
+    function binaryEncode(str, separator = " ") {
+      const bytes = new TextEncoder().encode(str);
+      return Array.from(bytes)
+        .map(b => b.toString(2).padStart(8, "0"))
+        .join(separator);
+    }
+
+    function binaryDecode(str) {
+      const cleaned = str.replace(/[^01]/g, "");
+      if (cleaned.length % 8 !== 0) {
+        throw new Error(t("invalidBin"));
+      }
+      const bytes = new Uint8Array(cleaned.length / 8);
+      for (let i = 0; i < cleaned.length; i += 8) {
+        bytes[i / 8] = parseInt(cleaned.slice(i, i + 8), 2);
+      }
+      return new TextDecoder().decode(bytes);
+    }
+
+    function jwtDecode(str) {
+      const parts = str.trim().split(".");
+      if (parts.length !== 3) {
+        throw new Error(t("invalidJwt"));
+      }
+      try {
+        const headerJson = base64Decode(parts[0]);
+        const payloadJson = base64Decode(parts[1]);
+        const headerObj = JSON.parse(headerJson);
+        const payloadObj = JSON.parse(payloadJson);
+        return {
+          header: JSON.stringify(headerObj, null, 2),
+          payload: JSON.stringify(payloadObj, null, 2)
+        };
+      } catch (e) {
+        throw new Error(`${t("invalidJwt")} (${e.message})`);
+      }
+    }
+
+    function processConversion() {
+      const input = state.input;
+      els.errorMessage.textContent = "";
+      els.errorContainer.classList.add("hidden");
+      
+      if (!input) {
+        els.outputText.value = "";
+        els.jwtHeader.value = "";
+        els.jwtPayload.value = "";
+        updateStats();
+        return;
+      }
+
+      try {
+        if (state.tab === "base64") {
+          if (state.mode === "encode") {
+            els.outputText.value = base64Encode(input, state.b64UrlSafe);
+          } else {
+            els.outputText.value = base64Decode(input);
+          }
+        } else if (state.tab === "url") {
+          if (state.mode === "encode") {
+            els.outputText.value = state.urlEncodeAll ? encodeURIComponent(input) : encodeURI(input);
+          } else {
+            els.outputText.value = decodeURIComponent(input);
+          }
+        } else if (state.tab === "html") {
+          if (state.mode === "encode") {
+            els.outputText.value = htmlEscape(input);
+          } else {
+            els.outputText.value = htmlUnescape(input);
+          }
+        } else if (state.tab === "hex") {
+          if (state.mode === "encode") {
+            els.outputText.value = hexEncode(input, state.hexSeparator);
+          } else {
+            els.outputText.value = hexDecode(input);
+          }
+        } else if (state.tab === "binary") {
+          if (state.mode === "encode") {
+            els.outputText.value = binaryEncode(input, state.binSeparator);
+          } else {
+            els.outputText.value = binaryDecode(input);
+          }
+        } else if (state.tab === "jwt") {
+          const decoded = jwtDecode(input);
+          els.jwtHeader.value = decoded.header;
+          els.jwtPayload.value = decoded.payload;
+        }
+      } catch (err) {
+        els.errorMessage.textContent = err.message;
+        els.errorContainer.classList.remove("hidden");
+        
+        els.outputText.value = "";
+        els.jwtHeader.value = "";
+        els.jwtPayload.value = "";
+      }
+      updateStats();
+    }
+
+    function updateStats() {
+      const inputLen = state.input.length;
+      els.inputStats.textContent = t("charsCount", inputLen);
+
+      if (state.tab === "jwt") {
+        const headerLen = els.jwtHeader.value.length;
+        const payloadLen = els.jwtPayload.value.length;
+        els.outputStats.textContent = t("charsCount", headerLen + payloadLen);
+      } else {
+        const outputLen = els.outputText.value.length;
+        els.outputStats.textContent = t("charsCount", outputLen);
+      }
+    }
+
+    function handleFile(file) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert(t("invalidFile"));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        let result = e.target.result;
+        if (!state.b64DataUrl) {
+          const commaIndex = result.indexOf(",");
+          if (commaIndex !== -1) {
+            result = result.substring(commaIndex + 1);
+          }
+        }
+        els.inputText.value = result;
+        state.input = result;
+        processConversion();
+        saveState();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function applyInputState() {
+      els.inputText.value = state.input;
+      els.b64UrlSafe.checked = state.b64UrlSafe;
+      els.b64DataUrl.checked = state.b64DataUrl;
+      els.urlEncodeAll.checked = state.urlEncodeAll;
+      els.hexSeparator.value = state.hexSeparator;
+      els.binSeparator.value = state.binSeparator;
+    }
+
+    function renderAll() {
+      renderStaticText();
+      setTheme(state.theme);
+      applyInputState();
+      renderTabs();
+      updateOptionsVisibility();
+      updateModeButtons();
+      processConversion();
+    }
+
+    function switchMode(mode) {
+      if (state.tab === "jwt") return;
+      state.mode = mode;
+      updateModeButtons();
+      updateOptionsVisibility();
+      processConversion();
+      saveState();
+    }
+
+    function copyResult() {
+      let textToCopy = "";
+      if (state.tab === "jwt") {
+        textToCopy = `// Header\n${els.jwtHeader.value}\n\n// Payload\n${els.jwtPayload.value}`;
+      } else {
+        textToCopy = els.outputText.value;
+      }
+      
+      if (!textToCopy) return;
+
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        els.copyBtn.textContent = t("copied");
+        setTimeout(() => (els.copyBtn.textContent = t("copy")), 1200);
+      }).catch(() => {
+        alert(t("failedCopy"));
+      });
+    }
+
+    function downloadResult() {
+      let text = "";
+      let filename = "output.txt";
+
+      if (state.tab === "jwt") {
+        text = `// Header\n${els.jwtHeader.value}\n\n// Payload\n${els.jwtPayload.value}`;
+        filename = "jwt_decoded.json";
+      } else {
+        text = els.outputText.value;
+        if (state.tab === "base64") {
+          filename = state.mode === "encode" ? "encoded.b64" : "decoded.bin";
+        } else if (state.tab === "hex") {
+          filename = state.mode === "encode" ? "encoded.hex" : "decoded.txt";
+        } else if (state.tab === "binary") {
+          filename = state.mode === "encode" ? "encoded.bin.txt" : "decoded.txt";
+        }
+      }
+
+      if (!text) return;
+
+      // Special handling for downloading files decoded from base64
+      if (state.tab === "base64" && state.mode === "decode") {
+        downloadBase64File(els.inputText.value, filename);
+        return;
+      }
+
+      try {
+        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        alert(t("failedDownload"));
+      }
+    }
+
+    function downloadBase64File(b64Str, defaultName) {
+      try {
+        let mime = "application/octet-stream";
+        let rawB64 = b64Str.trim();
+        
+        const match = rawB64.match(/^data:([^;]+);base64,(.*)$/);
+        if (match) {
+          mime = match[1];
+          rawB64 = match[2];
+        }
+        
+        const binary = atob(rawB64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        
+        const blob = new Blob([bytes], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        
+        let filename = defaultName;
+        if (match) {
+          const ext = mime.split("/")[1];
+          if (ext) {
+            filename = `decoded_file.${ext}`;
+          }
+        }
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert(t("invalidB64"));
+      }
+    }
+
+    function swapInputOutput() {
+      if (state.tab === "jwt") return;
+      const currentOutput = els.outputText.value;
+      if (!currentOutput) return;
+
+      state.input = currentOutput;
+      els.inputText.value = currentOutput;
+      
+      // Swap mode
+      state.mode = state.mode === "encode" ? "decode" : "encode";
+      
+      updateModeButtons();
+      updateOptionsVisibility();
+      processConversion();
+      saveState();
+    }
+
+    function resetAll() {
+      Object.assign(state, { ...DEFAULT_STATE });
+      applyInputState();
+      renderAll();
+      saveState();
+    }
+
+    function attachEvents() {
+      els.inputText.addEventListener("input", (event) => {
+        state.input = event.target.value;
+        processConversion();
+        saveState();
+      });
+
+      els.pasteBtn.addEventListener("click", () => {
+        navigator.clipboard.readText().then(text => {
+          els.inputText.value = text;
+          state.input = text;
+          processConversion();
+          saveState();
+        });
+      });
+
+      els.clearBtn.addEventListener("click", () => {
+        els.inputText.value = "";
+        state.input = "";
+        processConversion();
+        saveState();
+      });
+
+      els.swapBtn.addEventListener("click", swapInputOutput);
+      els.copyBtn.addEventListener("click", copyResult);
+      els.downloadBtn.addEventListener("click", downloadResult);
+
+      els.modeEncode.addEventListener("click", () => switchMode("encode"));
+      els.modeDecode.addEventListener("click", () => switchMode("decode"));
+
+      els.b64UrlSafe.addEventListener("change", (e) => {
+        state.b64UrlSafe = e.target.checked;
+        processConversion();
+        saveState();
+      });
+
+      els.b64DataUrl.addEventListener("change", (e) => {
+        state.b64DataUrl = e.target.checked;
+        // Re-run if input is uploaded (can re-upload or keep prefix)
+        processConversion();
+        saveState();
+      });
+
+      els.urlEncodeAll.addEventListener("change", (e) => {
+        state.urlEncodeAll = e.target.checked;
+        processConversion();
+        saveState();
+      });
+
+      els.hexSeparator.addEventListener("change", (e) => {
+        state.hexSeparator = e.target.value;
+        processConversion();
+        saveState();
+      });
+
+      els.binSeparator.addEventListener("change", (e) => {
+        state.binSeparator = e.target.value;
+        processConversion();
+        saveState();
+      });
+
+      els.languageBtn.addEventListener("click", () => {
+        state.language = getLanguage() === "de" ? "en" : "de";
+        renderAll();
+        saveState();
+      });
+
+      els.themeBtn.addEventListener("click", toggleTheme);
+      els.resetAllBtn.addEventListener("click", resetAll);
+
+      // File Drag & Drop
+      const dropzone = els.fileDropzone;
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }, false);
+      });
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, () => dropzone.classList.add('highlight'), false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, () => dropzone.classList.remove('highlight'), false);
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length) {
+          handleFile(files[0]);
+        }
+      });
+
+      dropzone.addEventListener('click', () => els.fileInput.click());
+      els.fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+          handleFile(e.target.files[0]);
+        }
+      });
+
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+        if (state.theme === "system") setTheme("system");
+      });
+    }
+
+    // Init
+    attachEvents();
+    renderAll();
+  </script>
+</body>
+</html>
