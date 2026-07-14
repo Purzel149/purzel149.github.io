@@ -1,0 +1,2576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <title>Aura Randomizer Suite - Custom Shuffler & Decider</title>
+  
+  <!-- Premium Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #070613;
+      --bg-gradient: radial-gradient(circle at 50% 0%, #171136 0%, #070613 70%);
+      --panel: rgba(18, 14, 43, 0.6);
+      --panel-border: rgba(168, 85, 247, 0.18);
+      --panel-glow: rgba(168, 85, 247, 0.05);
+      --ink: #f3f4f6;
+      --muted: #9ca3af;
+      
+      --accent-purple: #a855f7;
+      --accent-cyan: #06b6d4;
+      --accent-rose: #f43f5e;
+      --accent-amber: #f59e0b;
+      --accent-emerald: #10b981;
+      
+      --font: 'Outfit', system-ui, -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+      --radius: 20px;
+      --radius-sm: 12px;
+      --shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      background-image: var(--bg-gradient);
+      color: var(--ink);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(168, 85, 247, 0.3);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(168, 85, 247, 0.5);
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--panel-border);
+      padding-bottom: 20px;
+    }
+
+    .logo-area h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 30%, var(--accent-purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-area p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .back-home {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.2s;
+    }
+
+    .back-home:hover {
+      color: #fff;
+      background: rgba(168, 85, 247, 0.1);
+      border-color: var(--accent-purple);
+    }
+
+    /* Sound Switch */
+    .sound-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      user-select: none;
+      transition: all 0.2s;
+    }
+    .sound-toggle:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .sound-toggle input {
+      display: none;
+    }
+    .sound-icon {
+      font-size: 1.1rem;
+    }
+    .sound-toggle span {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .sound-toggle input:checked + span {
+      color: var(--accent-cyan);
+    }
+
+    /* Tabs Navigation */
+    .nav-tabs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+      margin-bottom: 32px;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 6px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 12px 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .tab-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(6, 182, 212, 0.2));
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+    }
+
+    /* Panel Content */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Grid Layout for Panels */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+
+    @media (min-width: 900px) {
+      .tool-grid {
+        grid-template-columns: 350px 1fr;
+      }
+    }
+
+    .card {
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(6, 182, 212, 0.24);
+      box-shadow: var(--shadow), 0 0 32px rgba(6, 182, 212, 0.06);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 12px;
+    }
+
+    .card-title svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--accent-purple);
+    }
+
+    /* Form Fields */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-control {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-sm);
+      color: #fff;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .input-control:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+    }
+
+    textarea.input-control {
+      resize: vertical;
+      min-height: 120px;
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    /* Buttons */
+    .btn {
+      background: linear-gradient(135deg, var(--accent-purple), #8b5cf6);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 14px 20px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.45);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: none;
+      color: var(--ink);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: none;
+    }
+
+    .btn-secondary.active {
+      color: #fff;
+      border-color: rgba(6, 182, 212, 0.46);
+      background: rgba(6, 182, 212, 0.16);
+      box-shadow: 0 0 18px rgba(6, 182, 212, 0.13);
+    }
+
+    .btn-cyan {
+      background: linear-gradient(135deg, var(--accent-cyan), #0891b2);
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+    }
+
+    .btn-cyan:hover {
+      box-shadow: 0 6px 20px rgba(6, 182, 212, 0.45);
+    }
+
+    .btn-rose {
+      background: linear-gradient(135deg, var(--accent-rose), #e11d48);
+      box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+    }
+
+    .btn-rose:hover {
+      box-shadow: 0 6px 20px rgba(244, 63, 94, 0.45);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .flex-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .flex-group > * {
+      flex: 1;
+    }
+
+    /* ==========================================================================
+       TAB 1: SPINNING WHEEL
+       ========================================================================== */
+    .wheel-arena {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 20px 0;
+      min-height: 400px;
+    }
+
+    .wheel-container {
+      position: relative;
+      width: min(380px, 90vw);
+      height: min(380px, 90vw);
+      border-radius: 50%;
+      box-shadow: 0 0 40px rgba(168, 85, 247, 0.25), 0 0 80px rgba(6, 182, 212, 0.15);
+      border: 8px solid #1a1636;
+      background: #110e24;
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .wheel-container.spinning {
+      box-shadow: 0 0 52px rgba(168, 85, 247, 0.42), 0 0 110px rgba(6, 182, 212, 0.28);
+    }
+
+    .wheel-pointer {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 18px solid transparent;
+      border-right: 18px solid transparent;
+      border-top: 28px solid var(--accent-cyan);
+      z-index: 10;
+      filter: drop-shadow(0 4px 10px rgba(6, 182, 212, 0.5));
+    }
+
+    #wheel-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 50%;
+    }
+
+    .wheel-center-pin {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 32px;
+      height: 32px;
+      background: #fff;
+      border-radius: 50%;
+      border: 4px solid #1e1b4b;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      z-index: 5;
+    }
+
+    .wheel-winner-banner {
+      margin-top: 24px;
+      min-height: 48px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.15), transparent);
+      padding: 8px 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .wheel-winner-banner.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* ==========================================================================
+       TAB 2: CARD DEALER
+       ========================================================================== */
+    .dealer-arena {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    @media (min-width: 600px) {
+      .dealer-arena {
+        grid-template-columns: 180px 1fr;
+      }
+    }
+
+    .deck-pile-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-deck {
+      position: relative;
+      width: 130px;
+      height: 182px;
+      cursor: pointer;
+      perspective: 1000px;
+    }
+
+    /* Deck piling visual effect */
+    .deck-shadow-card {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #110e24;
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .deck-shadow-card:nth-child(1) { transform: translate(-3px, -3px); }
+    .deck-shadow-card:nth-child(2) { transform: translate(-2px, -2px); }
+    .deck-shadow-card:nth-child(3) { transform: translate(-1px, -1px); }
+
+    .deck-top-card {
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #2e1065 0%, #0f052d 100%);
+      border: 2px solid var(--accent-purple);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: var(--accent-cyan);
+      box-shadow: 4px 6px 15px rgba(0, 0, 0, 0.4);
+      transition: all 0.2s;
+    }
+
+    .card-deck.shuffling .deck-top-card {
+      animation: deckShuffle 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes deckShuffle {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      20% { transform: translate(18px, -10px) rotate(9deg); }
+      44% { transform: translate(-16px, 8px) rotate(-8deg); }
+      68% { transform: translate(12px, -7px) rotate(5deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+
+    .card-deck:hover .deck-top-card {
+      transform: translate(-6px, -8px);
+      box-shadow: 8px 12px 20px rgba(168, 85, 247, 0.3);
+      border-color: var(--accent-cyan);
+    }
+
+    .deck-top-card svg {
+      width: 48px;
+      height: 48px;
+      fill: currentColor;
+    }
+
+    .deck-count {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+      background: rgba(0,0,0,0.2);
+      padding: 4px 12px;
+      border-radius: 12px;
+    }
+
+    .dealt-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 16px;
+      min-height: 200px;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: rgba(0,0,0,0.2);
+      border: 1px dashed rgba(255,255,255,0.05);
+      align-content: start;
+    }
+
+    /* Playing Card styles */
+    .playing-card {
+      position: relative;
+      aspect-ratio: 2.5 / 3.5;
+      background: #ffffff;
+      border-radius: 8px;
+      color: #000;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      font-family: system-ui, sans-serif;
+      user-select: none;
+      animation: dealCard 0.56s cubic-bezier(0.18, 0.89, 0.32, 1.22) forwards;
+      transform-style: preserve-3d;
+      transition: transform 0.2s;
+    }
+
+    .playing-card:hover {
+      transform: translateY(-5px) rotate(2deg) scale(1.05);
+      z-index: 2;
+    }
+
+    @keyframes dealCard {
+      from {
+        transform: translate(-170px, 70px) rotate3d(1, -1, 1, -72deg) scale(0.45);
+        opacity: 0;
+      }
+      70% {
+        transform: translate(8px, -10px) rotate3d(1, 0, 1, 6deg) scale(1.04);
+        opacity: 1;
+      }
+      to {
+        transform: translate(0,0) rotate(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .playing-card.red-suit {
+      color: #e11d48;
+    }
+
+    .playing-card.black-suit {
+      color: #1e293b;
+    }
+
+    .card-corner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.1;
+    }
+
+    .card-val {
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+
+    .card-suit-sm {
+      font-size: 0.9rem;
+    }
+
+    .card-center-suit {
+      align-self: center;
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+
+    .card-corner.bottom {
+      transform: rotate(180deg);
+    }
+
+    /* ==========================================================================
+       TAB 3: DICE ARENA
+       ========================================================================== */
+    .dice-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .dice-tray {
+      min-height: 280px;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(6, 182, 212, 0.13), transparent 26%),
+        radial-gradient(circle at center, #1b203a 0%, #0d0f1e 100%);
+      border: 4px solid #0f1122;
+      border-radius: var(--radius);
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.4);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      perspective: 900px;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .dice-tray.rolling {
+      border-color: rgba(244, 63, 94, 0.55);
+      box-shadow: inset 0 0 38px rgba(0,0,0,0.85), 0 0 38px rgba(244, 63, 94, 0.18);
+    }
+
+    .dice-tray-label {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.15);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Dice elements */
+    .die {
+      position: relative;
+      width: 92px;
+      height: 92px;
+      cursor: pointer;
+      user-select: none;
+      transform-style: preserve-3d;
+      transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
+    }
+
+    .die-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    .die.impact {
+      animation: dieImpact 0.42s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+
+    @keyframes dieImpact {
+      0% { transform: translateY(-18px) scale(1.12) rotateZ(var(--settle-rotate, 0deg)); }
+      55% { transform: translateY(5px) scale(0.95) rotateZ(var(--settle-rotate, 0deg)); }
+      100% { transform: translateY(0) scale(1) rotateZ(var(--settle-rotate, 0deg)); }
+    }
+
+    .die.d20-style,
+    .die.d20-die {
+      width: 92px;
+      height: 92px;
+    }
+
+    .die.d20-style {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-size: 1.5rem;
+      font-weight: 800;
+      font-family: var(--mono);
+      text-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+      background:
+        linear-gradient(32deg, transparent 48%, rgba(255,255,255,0.20) 49% 51%, transparent 52%),
+        linear-gradient(148deg, transparent 48%, rgba(255,255,255,0.14) 49% 51%, transparent 52%),
+        radial-gradient(circle at 36% 24%, rgba(255,255,255,0.28), transparent 26%),
+        linear-gradient(135deg, #4c1d95 0%, #2e1065 44%, #111827 100%);
+      border: 2px solid rgba(216, 180, 254, 0.86);
+      box-shadow:
+        0 18px 28px rgba(0, 0, 0, 0.48),
+        inset 0 10px 18px rgba(255,255,255,0.16),
+        inset 0 -12px 16px rgba(0,0,0,0.34),
+        0 0 24px rgba(168, 85, 247, 0.24);
+      clip-path: polygon(50% 0%, 82% 10%, 100% 38%, 94% 72%, 68% 96%, 32% 96%, 6% 72%, 0% 38%, 18% 10%);
+    }
+
+    .die.d20-style::before,
+    .die.d20-style::after {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      clip-path: polygon(50% 0%, 100% 100%, 0 100%);
+      border: 1px solid rgba(255,255,255,0.22);
+      opacity: 0.6;
+    }
+
+    .die.d20-style::after {
+      transform: rotate(180deg) scale(0.82);
+      opacity: 0.35;
+    }
+
+    .die-value {
+      position: relative;
+      z-index: 2;
+    }
+
+    .die.shaking {
+      animation: dieTumble 0.82s cubic-bezier(0.54, 0.03, 0.37, 0.97);
+    }
+
+    @keyframes dieTumble {
+      0% { transform: translate3d(-18px, -38px, 0) rotateX(44deg) rotateY(-22deg) rotateZ(-18deg) scale(0.92); }
+      28% { transform: translate3d(20px, 10px, 0) rotateX(-16deg) rotateY(34deg) rotateZ(24deg) scale(1.04); }
+      55% { transform: translate3d(-12px, -22px, 0) rotateX(34deg) rotateY(86deg) rotateZ(-34deg) scale(0.98); }
+      78% { transform: translate3d(12px, 8px, 0) rotateX(-22deg) rotateY(132deg) rotateZ(16deg) scale(1.02); }
+      100% { transform: translate3d(-18px, -38px, 0) rotateX(44deg) rotateY(198deg) rotateZ(-18deg) scale(0.92); }
+    }
+
+    .dice-spark {
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--spark-color);
+      box-shadow: 0 0 12px var(--spark-color);
+      animation: sparkPop 0.72s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes sparkPop {
+      from { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+      to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0); opacity: 0; }
+    }
+
+    .dice-total-display {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      min-height: 36px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .dice-total-display.visible {
+      opacity: 1;
+    }
+
+    .dice-total-display span {
+      color: var(--accent-amber);
+      font-family: var(--mono);
+      font-size: 1.8rem;
+      margin-left: 8px;
+    }
+
+    /* ==========================================================================
+       TAB 4: COIN FLIPPER
+       ========================================================================== */
+    .coin-arena {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      padding: 30px 0;
+    }
+
+    .coin-wrapper {
+      perspective: 1000px;
+      width: 180px;
+      height: 180px;
+    }
+
+    .coin {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+      cursor: pointer;
+    }
+
+    .coin.flipping {
+      animation: coinLift 1.2s cubic-bezier(0.18, 0.89, 0.32, 1.15);
+    }
+
+    @keyframes coinLift {
+      0% { filter: drop-shadow(0 12px 10px rgba(0,0,0,0.36)); }
+      45% { filter: drop-shadow(0 34px 28px rgba(245,158,11,0.28)); }
+      100% { filter: drop-shadow(0 12px 10px rgba(0,0,0,0.36)); }
+    }
+
+    .coin-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+      user-select: none;
+    }
+
+    .coin-face.heads {
+      background: radial-gradient(circle, #fcd34d 0%, #f59e0b 60%, #b45309 100%);
+      border: 8px double rgba(254, 243, 199, 0.8);
+      box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3), inset 0 0 15px rgba(255,255,255,0.4);
+    }
+
+    .coin-face.tails {
+      background: radial-gradient(circle, #cbd5e1 0%, #64748b 60%, #334155 100%);
+      border: 8px double rgba(241, 245, 249, 0.8);
+      box-shadow: 0 10px 25px rgba(100, 116, 139, 0.3), inset 0 0 15px rgba(255,255,255,0.4);
+      transform: rotateY(180deg);
+    }
+
+    .coin-face svg {
+      width: 54px;
+      height: 54px;
+      fill: currentColor;
+    }
+
+    .coin-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      width: 100%;
+      max-width: 450px;
+    }
+
+    .stat-pill {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-pill-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .stat-pill-value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #fff;
+      font-family: var(--mono);
+    }
+
+    /* ==========================================================================
+       TAB 5: MAGIC 8-BALL
+       ========================================================================== */
+    .eightball-arena {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      padding: 20px 0;
+    }
+
+    .ball-container {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #374151 0%, #111827 50%, #030712 100%);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.7), inset -10px -10px 20px rgba(0,0,0,0.8), inset 15px 15px 25px rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .ball-container:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 42px rgba(0,0,0,0.72), inset -10px -10px 20px rgba(0,0,0,0.8), inset 15px 15px 25px rgba(255,255,255,0.08), 0 0 30px rgba(168,85,247,0.16);
+    }
+
+    .ball-inner-window {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #09090b 0%, #020202 100%);
+      border: 4px solid #111827;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ball-triangle {
+      width: 0;
+      height: 0;
+      border-left: 45px solid transparent;
+      border-right: 45px solid transparent;
+      border-bottom: 78px solid rgba(168, 85, 247, 0.85);
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      transition: all 0.6s ease;
+      opacity: 0.1;
+      transform: scale(0.6) rotate(-10deg);
+      filter: drop-shadow(0 0 8px var(--accent-purple));
+    }
+
+    .ball-triangle.revealed {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+
+    .ball-text {
+      position: absolute;
+      width: 60px;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+      top: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-transform: uppercase;
+      word-wrap: break-word;
+    }
+
+    .ball-eight-logo {
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: #f3f4f6;
+      position: absolute;
+      transition: opacity 0.3s;
+    }
+
+    .ball-eight-logo.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .ball-shaking {
+      animation: ballShake 0.5s ease-in-out;
+    }
+
+    @keyframes ballShake {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      15% { transform: translate(-10px, 8px) rotate(-8deg); }
+      30% { transform: translate(12px, -10px) rotate(10deg); }
+      45% { transform: translate(-12px, -6px) rotate(-10deg); }
+      60% { transform: translate(10px, 8px) rotate(6deg); }
+      75% { transform: translate(-6px, -4px) rotate(-4deg); }
+      90% { transform: translate(4px, 4px) rotate(2deg); }
+    }
+
+    /* ==========================================================================
+       TAB 6: NUMBER GENERATOR
+       ========================================================================== */
+    .rng-arena {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 20px 0;
+    }
+
+    .rng-display-box {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      padding: 40px;
+      text-align: center;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+      position: relative;
+    }
+
+    .rng-number {
+      font-family: var(--mono);
+      font-size: 4rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      text-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+      letter-spacing: -1px;
+      word-break: break-all;
+      line-height: 1;
+    }
+
+    .rng-number.multiple {
+      font-size: 2.2rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      max-height: 250px;
+      overflow-y: auto;
+      width: 100%;
+      padding: 10px;
+    }
+
+    .rng-badge {
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-size: 1.8rem;
+      animation: badgePop 0.32s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+
+    .rng-number.result-pop,
+    .raffle-winner-name.result-pop {
+      animation: resultPop 0.45s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+
+    @keyframes badgePop {
+      from { transform: translateY(8px) scale(0.8); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    @keyframes resultPop {
+      0% { transform: scale(0.86); filter: brightness(1); }
+      55% { transform: scale(1.08); filter: brightness(1.45); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+
+    .rng-history-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      width: 100%;
+      margin-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding-top: 16px;
+    }
+
+    .rng-history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+      max-height: 80px;
+      overflow-y: auto;
+      width: 100%;
+    }
+
+    .rng-history-item {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      background: rgba(255,255,255,0.04);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.05);
+      color: var(--muted);
+    }
+
+    /* ==========================================================================
+       TAB 7: LIST RAFFLE
+       ========================================================================== */
+    .raffle-arena {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 350px;
+      position: relative;
+    }
+
+    .raffle-waiting {
+      color: var(--muted);
+      font-size: 1.1rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .raffle-waiting svg {
+      width: 64px;
+      height: 64px;
+      fill: rgba(255,255,255,0.08);
+    }
+
+    .raffle-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(7, 6, 19, 0.95);
+      z-index: 15;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-radius: var(--radius);
+      border: 2px solid var(--accent-emerald);
+      animation: overlayFadeIn 0.3s ease forwards;
+    }
+
+    @keyframes overlayFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .raffle-overlay.active {
+      display: flex;
+    }
+
+    .raffle-winner-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent-emerald);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    .raffle-winner-name {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 24px;
+      word-break: break-word;
+      padding: 0 24px;
+    }
+
+    /* Confetti Particle Container */
+    .confetti-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      border-radius: var(--radius);
+    }
+
+    .confetti-particle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      opacity: 0.8;
+      animation: confettiFall 2.4s linear forwards;
+    }
+
+    @keyframes confettiFall {
+      0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(400px) rotate(720deg); opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+
+    /* Footer styling */
+    footer {
+      margin-top: auto;
+      text-align: center;
+      padding: 24px 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-area">
+        <h1>Aura Randomizer</h1>
+        <p>A beautiful, client-side suite for random draws, dice, coins, and decision making</p>
+      </div>
+      
+      <div style="display: flex; gap: 12px;">
+        <label class="sound-toggle">
+          <input type="checkbox" id="sound-checkbox" checked>
+          <span class="sound-icon">🔊</span>
+          <span>SFX Engine</span>
+        </label>
+        
+        <a href="index.html" class="back-home">
+          <svg style="width: 16px; height: 16px; fill: currentColor;" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          Home
+        </a>
+      </div>
+    </header>
+
+    <!-- Navigation Pills -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="wheel">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+        Spin Wheel
+      </button>
+      <button class="tab-btn" data-tab="cards">
+        <svg viewBox="0 0 24 24"><path d="M21 16V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2zm-12 0V4h10v12H9zm-4 4h12v2H5c-1.1 0-2-.9-2-2V8h2v12z"/></svg>
+        Card Dealer
+      </button>
+      <button class="tab-btn" data-tab="dice">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0-2-.9-2-2V5c0-1.1-.9-2-2-2zm-7 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-4 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm8 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+        Dice Arena
+      </button>
+      <button class="tab-btn" data-tab="coin">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2zm0 4h2v6h-2z"/></svg>
+        Coin Flip
+      </button>
+      <button class="tab-btn" data-tab="eightball">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm0 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm-1.5-6h3v1.5h-3V12zm0-3h3V9h-3v1.5z"/></svg>
+        Magic 8-Ball
+      </button>
+      <button class="tab-btn" data-tab="rng">
+        <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0-2-.9-2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+        Numbers
+      </button>
+      <button class="tab-btn" data-tab="raffle">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2zm0 8H7v-2h10v2z"/></svg>
+        List Raffle
+      </button>
+    </nav>
+
+    <!-- Main Workspace -->
+    <main>
+      
+      <!-- ====================================================================
+           TAB 1: SPINNING WHEEL
+           ==================================================================== -->
+      <div class="tab-content active" id="tab-wheel">
+        <div class="tool-grid">
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+              Wheel Settings
+            </div>
+            
+            <div class="form-group">
+              <label for="wheel-choices">Choices (one per line)</label>
+              <textarea id="wheel-choices" class="input-control" placeholder="Enter choices here...">Pizza
+Burgers
+Sushi
+Tacos
+Pasta
+Salad</textarea>
+            </div>
+            
+            <button class="btn" id="wheel-spin-btn">SPIN WHEEL</button>
+            
+            <div class="flex-group">
+              <button class="btn btn-secondary" id="wheel-shuffle-btn">Shuffle Items</button>
+              <button class="btn btn-secondary" id="wheel-reset-btn">Reset Defaults</button>
+            </div>
+          </div>
+          
+          <div class="card" style="align-items: center; justify-content: center;">
+            <div class="wheel-arena">
+              <div class="wheel-container">
+                <div class="wheel-pointer"></div>
+                <div class="wheel-center-pin"></div>
+                <canvas id="wheel-canvas" width="600" height="600"></canvas>
+              </div>
+              
+              <div class="wheel-winner-banner" id="wheel-winner">
+                🎉 Selected: <span id="wheel-winner-text" style="color: var(--accent-cyan);">None</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           TAB 2: CARD DEALER
+           ==================================================================== -->
+      <div class="tab-content" id="tab-cards">
+        <div class="tool-grid">
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M21 16V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2zm-12 0V4h10v12H9zm-4 4h12v2H5c-1.1 0-2-.9-2-2V8h2v12z"/></svg>
+              Deck Settings
+            </div>
+            
+            <div class="form-group">
+              <label for="deck-preset">Deck Type</label>
+              <select id="deck-preset" class="input-control">
+                <option value="52">Standard 52-Card Deck</option>
+                <option value="euchre">Euchre / Short Deck (9 to Ace)</option>
+                <option value="colors">Red & Black Draw (4 cards)</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="deal-count">Cards to Deal</label>
+              <input type="number" id="deal-count" class="input-control" value="1" min="1" max="10">
+            </div>
+            
+            <button class="btn btn-cyan" id="deal-btn">DEAL CARDS</button>
+            
+            <div class="flex-group">
+              <button class="btn btn-secondary" id="deck-shuffle-btn">Shuffle Deck</button>
+              <button class="btn btn-secondary" id="deck-reset-btn">Reset/Collect</button>
+            </div>
+          </div>
+          
+          <div class="card">
+            <div class="dealer-arena">
+              <div class="deck-pile-container">
+                <div class="card-deck" id="deck-trigger">
+                  <div class="deck-shadow-card"></div>
+                  <div class="deck-shadow-card"></div>
+                  <div class="deck-shadow-card"></div>
+                  <div class="deck-top-card">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                  </div>
+                </div>
+                <div class="deck-count" id="cards-remaining">52 Cards Left</div>
+              </div>
+              
+              <div class="dealt-cards-grid" id="dealt-cards-container">
+                <!-- Dealt cards appear here dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           TAB 3: DICE ARENA
+           ==================================================================== -->
+      <div class="tab-content" id="tab-dice">
+        <div class="tool-grid">
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0-2-.9-2-2V5c0-1.1-.9-2-2-2zm-7 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-4 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm8 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+              Dice Config
+            </div>
+            
+            <div class="form-group">
+              <label>Number of Dice</label>
+              <div class="flex-group" style="gap: 6px;">
+                <button class="btn btn-secondary active dice-num-btn" data-count="1" style="padding: 8px;">1</button>
+                <button class="btn btn-secondary dice-num-btn" data-count="2" style="padding: 8px;">2</button>
+                <button class="btn btn-secondary dice-num-btn" data-count="3" style="padding: 8px;">3</button>
+                <button class="btn btn-secondary dice-num-btn" data-count="4" style="padding: 8px;">4</button>
+                <button class="btn btn-secondary dice-num-btn" data-count="5" style="padding: 8px;">5</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Dice Type</label>
+              <div class="flex-group" style="gap: 6px; flex-wrap: wrap;">
+                <button class="btn btn-secondary active dice-type-btn" data-type="D6" style="padding: 8px 12px; flex: unset;">D6 (Dots)</button>
+                <button class="btn btn-secondary dice-type-btn" data-type="D20" style="padding: 8px 12px; flex: unset;">D20 (Numbers)</button>
+              </div>
+            </div>
+            
+            <button class="btn btn-rose" id="roll-dice-btn">ROLL DICE</button>
+          </div>
+          
+          <div class="card dice-layout">
+            <div class="dice-total-display" id="dice-total">
+              Total Sum: <span>0</span>
+            </div>
+            
+            <div class="dice-tray" id="dice-tray">
+              <div class="dice-tray-label">Dice Tray</div>
+              <!-- Dice render here -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           TAB 4: COIN FLIPPER
+           ==================================================================== -->
+      <div class="tab-content" id="tab-coin">
+        <div class="tool-grid">
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2zm0 4h2v6h-2z"/></svg>
+              Coin Options
+            </div>
+            
+            <button class="btn" id="flip-coin-btn">FLIP COIN</button>
+            <button class="btn btn-secondary" id="reset-coin-stats">Reset Stats</button>
+          </div>
+          
+          <div class="card" style="align-items: center; gap: 24px;">
+            <div class="coin-arena">
+              <div class="coin-wrapper">
+                <div class="coin" id="coin-element">
+                  <!-- Heads Face -->
+                  <div class="coin-face heads">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    HEADS
+                  </div>
+                  <!-- Tails Face -->
+                  <div class="coin-face tails">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+                    TAILS
+                  </div>
+                </div>
+              </div>
+              
+              <div class="coin-stats-row">
+                <div class="stat-pill">
+                  <div class="stat-pill-label">Flips</div>
+                  <div class="stat-pill-value" id="coin-stat-flips">0</div>
+                </div>
+                <div class="stat-pill">
+                  <div class="stat-pill-label">Heads</div>
+                  <div class="stat-pill-value" id="coin-stat-heads">0%</div>
+                </div>
+                <div class="stat-pill">
+                  <div class="stat-pill-label">Tails</div>
+                  <div class="stat-pill-value" id="coin-stat-tails">0%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           TAB 5: MAGIC 8-BALL
+           ==================================================================== -->
+      <div class="tab-content" id="tab-eightball">
+        <div class="tool-grid">
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm0 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm-1.5-6h3v1.5h-3V12zm0-3h3V9h-3v1.5z"/></svg>
+              Ask the Oracle
+            </div>
+            
+            <div class="form-group">
+              <label for="eightball-question">Your Question</label>
+              <input type="text" id="eightball-question" class="input-control" placeholder="Will I become a millionaire?">
+            </div>
+            
+            <button class="btn btn-cyan" id="ask-eightball-btn">SHAKE ORACLE</button>
+          </div>
+          
+          <div class="card" style="align-items: center; justify-content: center;">
+            <div class="eightball-arena">
+              <div class="ball-container" id="ball-trigger">
+                <div class="ball-eight-logo" id="ball-logo">8</div>
+                <div class="ball-inner-window">
+                  <div class="ball-triangle" id="ball-triangle">
+                    <span class="ball-text" id="ball-answer-text">Ask a question</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           TAB 6: NUMBER GENERATOR
+           ==================================================================== -->
+      <div class="tab-content" id="tab-rng">
+        <div class="tool-grid">
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0-2-.9-2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+              RNG Configuration
+            </div>
+            
+            <div class="flex-group">
+              <div class="form-group">
+                <label for="rng-min">Min Value</label>
+                <input type="number" id="rng-min" class="input-control" value="1">
+              </div>
+              <div class="form-group">
+                <label for="rng-max">Max Value</label>
+                <input type="number" id="rng-max" class="input-control" value="100">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="rng-count">Quantity to Generate</label>
+              <input type="number" id="rng-count" class="input-control" value="1" min="1" max="100">
+            </div>
+
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px;">
+              <input type="checkbox" id="rng-unique" checked style="width: 18px; height: 18px;">
+              <label for="rng-unique" style="text-transform: none; font-size: 0.9rem;">Exclude duplicates (unique numbers only)</label>
+            </div>
+            
+            <button class="btn btn-rose" id="generate-rng-btn">GENERATE NUMBER</button>
+          </div>
+          
+          <div class="card">
+            <div class="rng-arena">
+              <div class="rng-display-box">
+                <div class="rng-number" id="rng-result">100</div>
+              </div>
+              
+              <div class="rng-history-label">Generation History</div>
+              <div class="rng-history-list" id="rng-history">
+                <!-- Past results go here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           TAB 7: LIST RAFFLE
+           ==================================================================== -->
+      <div class="tab-content" id="tab-raffle">
+        <div class="tool-grid">
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2zm0 8H7v-2h10v2z"/></svg>
+              Raffle List
+            </div>
+            
+            <div class="form-group">
+              <label for="raffle-items">Entrants (one per line)</label>
+              <textarea id="raffle-items" class="input-control" placeholder="Alice&#10;Bob&#10;Charlie&#10;David&#10;Eva">Alice
+Bob
+Charlie
+David
+Eva</textarea>
+            </div>
+
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px;">
+              <input type="checkbox" id="raffle-remove-picked" checked style="width: 18px; height: 18px;">
+              <label for="raffle-remove-picked" style="text-transform: none; font-size: 0.9rem;">Remove picked names from list</label>
+            </div>
+            
+            <button class="btn" id="raffle-pick-btn">PICK WINNER</button>
+          </div>
+          
+          <div class="card" style="position: relative; justify-content: center; overflow: hidden;">
+            <div class="raffle-arena" id="raffle-arena">
+              <div class="raffle-waiting">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span>Add entrants and click "Pick Winner" to draw!</span>
+              </div>
+              
+              <div class="raffle-overlay" id="raffle-overlay">
+                <div class="confetti-container" id="confetti-container"></div>
+                <div class="raffle-winner-title">🏆 And the winner is...</div>
+                <div class="raffle-winner-name" id="raffle-winner-name">Charlie</div>
+                <button class="btn btn-secondary btn-sm" id="raffle-close-btn" style="padding: 8px 16px;">Draw Again</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <footer>
+      <p>&copy; 2026 Aura Tool Suite. Built for offline speed and security.</p>
+    </footer>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       SOUND EFFECTS SYNTH ENGINE
+       ========================================================================== */
+    const sfxCheckbox = document.getElementById('sound-checkbox');
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    const playSound = {
+      tick: () => {
+        if (!sfxCheckbox.checked) return;
+        initAudio();
+        if (!audioCtx) return;
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.frequency.setValueAtTime(650, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.04);
+        
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+      },
+      coin: () => {
+        if (!sfxCheckbox.checked) return;
+        initAudio();
+        if (!audioCtx) return;
+        
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc2.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        osc1.frequency.exponentialRampToValueAtTime(1174.66, audioCtx.currentTime + 0.4);
+        
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+        
+        osc1.start();
+        osc2.start();
+        osc1.stop(audioCtx.currentTime + 0.45);
+        osc2.stop(audioCtx.currentTime + 0.45);
+      },
+      dice: () => {
+        if (!sfxCheckbox.checked) return;
+        initAudio();
+        if (!audioCtx) return;
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.12);
+        
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.13);
+      },
+      win: () => {
+        if (!sfxCheckbox.checked) return;
+        initAudio();
+        if (!audioCtx) return;
+        
+        const now = audioCtx.currentTime;
+        const notes = [261.63, 329.63, 392.00, 523.25]; // C Major
+        notes.forEach((freq, index) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + index * 0.08);
+          gain.gain.setValueAtTime(0.06, now + index * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + index * 0.08 + 0.25);
+          
+          osc.start(now + index * 0.08);
+          osc.stop(now + index * 0.08 + 0.3);
+        });
+      }
+    };
+
+    // Activate WebAudio context on initial user click
+    document.body.addEventListener('click', () => {
+      initAudio();
+    }, { once: true });
+
+
+    /* ==========================================================================
+       TAB SYSTEM
+       ========================================================================== */
+    const tabs = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        tab.classList.add('active');
+        const target = document.getElementById('tab-' + tab.dataset.tab);
+        target.classList.add('active');
+
+        // Special render trigger for wheel canvas if tab becomes visible
+        if (tab.dataset.tab === 'wheel') {
+          drawWheel();
+        }
+      });
+    });
+
+
+    /* ==========================================================================
+       WHEEL OF FORTUNE LOGIC
+       ========================================================================== */
+    const canvas = document.getElementById('wheel-canvas');
+    const ctx = canvas.getContext('2d');
+    const wheelContainer = document.querySelector('.wheel-container');
+    const wheelChoicesInput = document.getElementById('wheel-choices');
+    const spinBtn = document.getElementById('wheel-spin-btn');
+    const wheelWinner = document.getElementById('wheel-winner');
+    const wheelWinnerText = document.getElementById('wheel-winner-text');
+
+    let items = [];
+    let startAngle = 0;
+    let spinAngleStart = 0;
+    let spinTime = 0;
+    let spinTimeTotal = 0;
+    let isSpinning = false;
+    let lastPlayedTickAngle = 0;
+
+    const colors = [
+      '#a855f7', '#6366f1', '#06b6d4', '#10b981', 
+      '#f59e0b', '#ef4444', '#ec4899', '#14b8a6'
+    ];
+
+    function getItems() {
+      return wheelChoicesInput.value
+        .split('\n')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+    }
+
+    function drawWheel() {
+      items = getItems();
+      const numSlices = items.length;
+      if (numSlices === 0) return;
+      
+      const arc = Math.PI / (numSlices / 2);
+      ctx.clearRect(0, 0, 600, 600);
+      
+      // Shadow ring
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+      ctx.shadowBlur = 15;
+      
+      for (let i = 0; i < numSlices; i++) {
+        const angle = startAngle + i * arc;
+        ctx.fillStyle = colors[i % colors.length];
+        
+        ctx.beginPath();
+        ctx.arc(300, 300, 270, angle, angle + arc, false);
+        ctx.arc(300, 300, 0, angle + arc, angle, true);
+        ctx.fill();
+        
+        // Border between segments
+        ctx.strokeStyle = '#110e24';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        
+        // Add labels
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 4;
+        ctx.fillStyle = '#ffffff';
+        ctx.translate(300 + Math.cos(angle + arc / 2) * 160, 300 + Math.sin(angle + arc / 2) * 160);
+        ctx.rotate(angle + arc / 2 + Math.PI);
+        ctx.font = 'bold 20px Outfit';
+        ctx.textAlign = 'center';
+        
+        // Truncate long text
+        let text = items[i];
+        if (text.length > 12) text = text.slice(0, 10) + '..';
+        ctx.fillText(text, 0, 8);
+        ctx.restore();
+      }
+    }
+
+    function rotateWheel() {
+      spinTime += 16; // Approx 60fps frame delta
+      if (spinTime >= spinTimeTotal) {
+        isSpinning = false;
+        spinBtn.disabled = false;
+        wheelContainer.classList.remove('spinning');
+        
+        // Find winner
+        const items = getItems();
+        const numSlices = items.length;
+        const arc = Math.PI / (numSlices / 2);
+        
+        // Normalized angle between 0 and 2*PI
+        const normalizedAngle = (startAngle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+        
+        // Calculate the slice that ended up at the top pointer (which is at 1.5 * PI)
+        const pointerAngle = 1.5 * Math.PI;
+        const winnerIndex = Math.floor((pointerAngle - normalizedAngle + Math.PI * 2) % (Math.PI * 2) / arc);
+        
+        const winner = items[winnerIndex];
+        
+        wheelWinnerText.textContent = winner;
+        wheelWinner.classList.add('active');
+        playSound.win();
+        return;
+      }
+      
+      // Custom easing out spin mechanics
+      const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
+      startAngle += (spinAngle * Math.PI / 180);
+      
+      // Calculate tick sound triggers
+      const numSlices = items.length;
+      const segmentAngle = 360 / numSlices;
+      const angleInDegrees = (startAngle * 180 / Math.PI);
+      
+      if (Math.abs(angleInDegrees - lastPlayedTickAngle) >= segmentAngle) {
+        playSound.tick();
+        lastPlayedTickAngle = angleInDegrees;
+      }
+      
+      drawWheel();
+      requestAnimationFrame(rotateWheel);
+    }
+
+    function easeOut(t, b, c, d) {
+      const ts = (t /= d) * t;
+      const tc = ts * t;
+      return b + c * (tc + -3 * ts + 3 * t);
+    }
+
+    // Event listeners for Wheel
+    spinBtn.addEventListener('click', () => {
+      if (isSpinning) return;
+      const items = getItems();
+      if (items.length < 2) return;
+      
+      wheelWinner.classList.remove('active');
+      isSpinning = true;
+      spinBtn.disabled = true;
+      wheelContainer.classList.add('spinning');
+      
+      spinAngleStart = Math.random() * 10 + 15;
+      spinTime = 0;
+      spinTimeTotal = Math.random() * 3000 + 3500; // ~6-7 seconds
+      
+      rotateWheel();
+    });
+
+    wheelChoicesInput.addEventListener('input', drawWheel);
+    
+    document.getElementById('wheel-shuffle-btn').addEventListener('click', () => {
+      const list = getItems();
+      for (let i = list.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+      }
+      wheelChoicesInput.value = list.join('\n');
+      drawWheel();
+    });
+
+    document.getElementById('wheel-reset-btn').addEventListener('click', () => {
+      wheelChoicesInput.value = "Pizza\nBurgers\nSushi\nTacos\nPasta\nSalad";
+      drawWheel();
+    });
+
+    // Initialize wheel drawing
+    drawWheel();
+
+
+    /* ==========================================================================
+       CARD DEALER LOGIC
+       ========================================================================== */
+    const deckPresetSelect = document.getElementById('deck-preset');
+    const dealCountInput = document.getElementById('deal-count');
+    const dealBtn = document.getElementById('deal-btn');
+    const deckTrigger = document.getElementById('deck-trigger');
+    const cardsRemaining = document.getElementById('cards-remaining');
+    const dealtCardsContainer = document.getElementById('dealt-cards-container');
+
+    let currentDeck = [];
+    const suits = [
+      { name: 'Hearts', symbol: '♥', color: 'red-suit' },
+      { name: 'Diamonds', symbol: '♦', color: 'red-suit' },
+      { name: 'Clubs', symbol: '♣', color: 'black-suit' },
+      { name: 'Spades', symbol: '♠', color: 'black-suit' }
+    ];
+
+    function createDeck() {
+      const preset = deckPresetSelect.value;
+      const newDeck = [];
+      
+      if (preset === 'colors') {
+        // Red, Black, Gold, Silver custom minimal deck
+        return [
+          { value: 'RED', suit: '🔴', color: 'red-suit' },
+          { value: 'BLK', suit: '⚫', color: 'black-suit' },
+          { value: 'GOLD', suit: '🟡', color: 'red-suit' },
+          { value: 'SILV', suit: '⚪', color: 'black-suit' }
+        ];
+      }
+
+      const values = preset === 'euchre' 
+        ? ['9', '10', 'J', 'Q', 'K', 'A']
+        : ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+      suits.forEach(suit => {
+        values.forEach(val => {
+          newDeck.push({
+            value: val,
+            suit: suit.symbol,
+            color: suit.color
+          });
+        });
+      });
+      
+      return newDeck;
+    }
+
+    function shuffleDeck(deck) {
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      deckTrigger.classList.remove('shuffling');
+      void deckTrigger.offsetWidth;
+      deckTrigger.classList.add('shuffling');
+      setTimeout(() => deckTrigger.classList.remove('shuffling'), 720);
+    }
+
+    function resetDeck() {
+      currentDeck = createDeck();
+      shuffleDeck(currentDeck);
+      cardsRemaining.textContent = `${currentDeck.length} Cards Left`;
+      dealtCardsContainer.innerHTML = '';
+    }
+
+    function dealCards() {
+      const count = parseInt(dealCountInput.value) || 1;
+      
+      if (currentDeck.length === 0) {
+        resetDeck();
+        playSound.coin();
+      }
+
+      const actualDealCount = Math.min(count, currentDeck.length);
+      
+      for (let i = 0; i < actualDealCount; i++) {
+        const card = currentDeck.pop();
+        
+        const cardEl = document.createElement('div');
+        cardEl.className = `playing-card ${card.color}`;
+        
+        cardEl.innerHTML = `
+          <div class="card-corner">
+            <span class="card-val">${card.value}</span>
+            <span class="card-suit-sm">${card.suit}</span>
+          </div>
+          <div class="card-center-suit">${card.suit}</div>
+          <div class="card-corner bottom">
+            <span class="card-val">${card.value}</span>
+            <span class="card-suit-sm">${card.suit}</span>
+          </div>
+        `;
+        
+        dealtCardsContainer.appendChild(cardEl);
+        playSound.tick();
+      }
+
+      // Scroll to the bottom of the grid
+      dealtCardsContainer.scrollTop = dealtCardsContainer.scrollHeight;
+      cardsRemaining.textContent = `${currentDeck.length} Cards Left`;
+    }
+
+    dealBtn.addEventListener('click', dealCards);
+    deckTrigger.addEventListener('click', dealCards);
+    
+    document.getElementById('deck-shuffle-btn').addEventListener('click', () => {
+      shuffleDeck(currentDeck);
+      playSound.coin();
+    });
+
+    document.getElementById('deck-reset-btn').addEventListener('click', resetDeck);
+    deckPresetSelect.addEventListener('change', resetDeck);
+
+    // Initial Deck setup
+    resetDeck();
+
+
+    /* ==========================================================================
+       DICE ARENA LOGIC
+       ========================================================================== */
+    const rollDiceBtn = document.getElementById('roll-dice-btn');
+    const diceTray = document.getElementById('dice-tray');
+    const diceTotalText = document.getElementById('dice-total');
+    const diceNumButtons = document.querySelectorAll('.dice-num-btn');
+    const diceTypeButtons = document.querySelectorAll('.dice-type-btn');
+
+    let diceCount = 1;
+    let diceType = 'D6';
+
+    diceNumButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        diceNumButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        diceCount = parseInt(btn.dataset.count);
+      });
+    });
+
+    diceTypeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        diceTypeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        diceType = btn.dataset.type;
+      });
+    });
+
+    function getD6DieMarkup(val) {
+      const pipPositions = {
+        1: [[50, 50]],
+        2: [[31, 31], [69, 69]],
+        3: [[31, 31], [50, 50], [69, 69]],
+        4: [[31, 31], [69, 31], [31, 69], [69, 69]],
+        5: [[31, 31], [69, 31], [50, 50], [31, 69], [69, 69]],
+        6: [[31, 28], [69, 28], [31, 50], [69, 50], [31, 72], [69, 72]]
+      };
+      const uniqueId = `die-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const pips = (pipPositions[val] || []).map(([cx, cy]) => `
+        <circle cx="${cx}" cy="${cy}" r="7.4" fill="url(#${uniqueId}-pip)"/>
+        <circle cx="${cx - 2.2}" cy="${cy - 2.4}" r="2.1" fill="#ffffff" opacity="0.22"/>
+      `).join('');
+
+      return `
+        <svg class="die-svg" viewBox="0 0 100 100" role="img" aria-label="Rolled ${val}">
+          <defs>
+            <linearGradient id="${uniqueId}-body" x1="16" y1="10" x2="86" y2="92" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#ffffff"/>
+              <stop offset="0.34" stop-color="#f8fafc"/>
+              <stop offset="0.72" stop-color="#dce8f7"/>
+              <stop offset="1" stop-color="#aebfd4"/>
+            </linearGradient>
+            <radialGradient id="${uniqueId}-shine" cx="30%" cy="22%" r="55%">
+              <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+              <stop offset="0.38" stop-color="#ffffff" stop-opacity="0.42"/>
+              <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="${uniqueId}-pip" cx="36%" cy="30%" r="68%">
+              <stop offset="0" stop-color="#475569"/>
+              <stop offset="0.48" stop-color="#111827"/>
+              <stop offset="1" stop-color="#020617"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="56" cy="93" rx="32" ry="7" fill="#020617" opacity="0.28"/>
+          <path d="M18 10h53c10 0 19 9 19 19v53c0 3-3 6-6 6H31c-11 0-21-10-21-21V18c0-4 4-8 8-8z" fill="#708198" opacity="0.75"/>
+          <rect x="8" y="6" width="82" height="82" rx="18" fill="url(#${uniqueId}-body)"/>
+          <rect x="11" y="9" width="76" height="76" rx="15" fill="none" stroke="#ffffff" stroke-opacity="0.72" stroke-width="2"/>
+          <path d="M11 65c7 13 18 20 34 20h26c9 0 16-7 16-16V43c-8 21-29 36-76 22z" fill="#64748b" opacity="0.16"/>
+          <ellipse cx="35" cy="24" rx="28" ry="20" fill="url(#${uniqueId}-shine)"/>
+          ${pips}
+        </svg>
+      `;
+    }
+
+    function getD20DieMarkup(val) {
+      const uniqueId = `d20-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      return `
+        <svg class="die-svg" viewBox="0 0 100 100" role="img" aria-label="Rolled ${val}">
+          <defs>
+            <linearGradient id="${uniqueId}-main" x1="18" y1="8" x2="82" y2="94" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#7dd3fc"/>
+              <stop offset="0.26" stop-color="#8b5cf6"/>
+              <stop offset="0.64" stop-color="#4c1d95"/>
+              <stop offset="1" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="${uniqueId}-edge" x1="16" y1="12" x2="84" y2="88" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#f0abfc"/>
+              <stop offset="1" stop-color="#06b6d4"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="54" cy="94" rx="30" ry="7" fill="#020617" opacity="0.32"/>
+          <polygon points="50,4 78,14 96,39 88,73 64,94 36,94 12,73 4,39 22,14" fill="url(#${uniqueId}-main)" stroke="url(#${uniqueId}-edge)" stroke-width="2.2"/>
+          <polygon points="50,4 50,50 22,14" fill="#ffffff" opacity="0.16"/>
+          <polygon points="50,4 78,14 50,50" fill="#ffffff" opacity="0.10"/>
+          <polygon points="78,14 96,39 50,50" fill="#c084fc" opacity="0.13"/>
+          <polygon points="96,39 88,73 50,50" fill="#020617" opacity="0.18"/>
+          <polygon points="88,73 64,94 50,50" fill="#020617" opacity="0.28"/>
+          <polygon points="64,94 36,94 50,50" fill="#312e81" opacity="0.22"/>
+          <polygon points="36,94 12,73 50,50" fill="#020617" opacity="0.20"/>
+          <polygon points="12,73 4,39 50,50" fill="#06b6d4" opacity="0.11"/>
+          <polygon points="4,39 22,14 50,50" fill="#ffffff" opacity="0.08"/>
+          <polygon points="50,18 76,39 66,70 34,70 24,39" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="1.4"/>
+          <text x="50" y="59" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="25" font-weight="800" fill="#ffffff" stroke="#111827" stroke-width="0.9" paint-order="stroke">${val}</text>
+        </svg>
+      `;
+    }
+
+    function triggerDiceSparks(count = 18) {
+      const colors = ['#f43f5e', '#f59e0b', '#06b6d4', '#10b981', '#a855f7'];
+      for (let i = 0; i < count; i++) {
+        const spark = document.createElement('div');
+        spark.className = 'dice-spark';
+        spark.style.setProperty('--x', `${42 + Math.random() * 16}%`);
+        spark.style.setProperty('--y', `${48 + Math.random() * 18}%`);
+        spark.style.setProperty('--dx', `${Math.random() * 150 - 75}px`);
+        spark.style.setProperty('--dy', `${Math.random() * 100 - 70}px`);
+        spark.style.setProperty('--spark-color', colors[Math.floor(Math.random() * colors.length)]);
+        spark.style.animationDelay = `${Math.random() * 0.12}s`;
+        diceTray.appendChild(spark);
+        spark.addEventListener('animationend', () => spark.remove());
+      }
+    }
+
+    rollDiceBtn.addEventListener('click', () => {
+      rollDiceBtn.disabled = true;
+      diceTray.innerHTML = '<div class="dice-tray-label">Rolling Tray</div>';
+      diceTray.classList.add('rolling');
+      diceTotalText.classList.remove('visible');
+      
+      const rolledValues = [];
+      const dieElements = [];
+
+      for (let i = 0; i < diceCount; i++) {
+        const val = diceType === 'D6' 
+          ? Math.floor(Math.random() * 6) + 1
+          : Math.floor(Math.random() * 20) + 1;
+        
+        rolledValues.push(val);
+        
+        const dieEl = document.createElement('div');
+        if (diceType === 'D6') {
+          dieEl.className = 'die shaking';
+          dieEl.dataset.value = val;
+          dieEl.innerHTML = getD6DieMarkup(val);
+        } else {
+          dieEl.className = 'die d20-die shaking';
+          dieEl.innerHTML = getD20DieMarkup(val);
+        }
+        
+        diceTray.appendChild(dieEl);
+        dieElements.push(dieEl);
+      }
+
+      // Rattle sound sequence
+      let soundTicks = 0;
+      const rattleInterval = setInterval(() => {
+        if (soundTicks < 4) {
+          playSound.dice();
+          soundTicks++;
+        } else {
+          clearInterval(rattleInterval);
+        }
+      }, 800 / 5);
+
+      // Settle down after 800ms
+      setTimeout(() => {
+        dieElements.forEach((die, index) => {
+          die.classList.remove('shaking');
+          die.classList.add('impact');
+          // Add custom random rotation for visual realism
+          const randomRotation = Math.floor(Math.random() * 20) - 10;
+          die.style.setProperty('--settle-rotate', `${randomRotation}deg`);
+          die.style.transform = `rotateZ(${randomRotation}deg)`;
+          setTimeout(() => die.classList.remove('impact'), 430);
+        });
+        
+        const sum = rolledValues.reduce((a, b) => a + b, 0);
+        diceTotalText.querySelector('span').textContent = sum;
+        diceTotalText.classList.add('visible');
+        triggerDiceSparks(diceCount * 4 + 6);
+        diceTray.classList.remove('rolling');
+        
+        playSound.win();
+        rollDiceBtn.disabled = false;
+      }, 800);
+    });
+
+
+    /* ==========================================================================
+       COIN FLIPPER LOGIC
+       ========================================================================== */
+    const flipCoinBtn = document.getElementById('flip-coin-btn');
+    const coinEl = document.getElementById('coin-element');
+    const statFlipsText = document.getElementById('coin-stat-flips');
+    const statHeadsText = document.getElementById('coin-stat-heads');
+    const statTailsText = document.getElementById('coin-stat-tails');
+
+    let totalFlips = 0;
+    let headsCount = 0;
+    let tailsCount = 0;
+    let currentDegree = 0;
+    let isFlipping = false;
+
+    function resetCoinStats() {
+      totalFlips = 0;
+      headsCount = 0;
+      tailsCount = 0;
+      statFlipsText.textContent = '0';
+      statHeadsText.textContent = '0%';
+      statTailsText.textContent = '0%';
+    }
+
+    function flipCoin() {
+      if (isFlipping) return;
+      isFlipping = true;
+      flipCoinBtn.disabled = true;
+      
+      const outcome = Math.random() < 0.5 ? 'heads' : 'tails';
+      
+      // Calculate rotation (minimum 5 full spins + face selection)
+      const additionalRotation = outcome === 'heads' ? 0 : 180;
+      const spinRotations = (Math.floor(Math.random() * 4) + 6) * 360; // 6 to 9 full spins
+      currentDegree += spinRotations + additionalRotation;
+      
+      // Force rotation
+      coinEl.style.transform = `rotateY(${currentDegree}deg)`;
+      coinEl.classList.add('flipping');
+      
+      playSound.coin();
+      
+      setTimeout(() => {
+        totalFlips++;
+        if (outcome === 'heads') {
+          headsCount++;
+        } else {
+          tailsCount++;
+        }
+        
+        statFlipsText.textContent = totalFlips;
+        statHeadsText.textContent = `${Math.round((headsCount / totalFlips) * 100)}%`;
+        statTailsText.textContent = `${Math.round((tailsCount / totalFlips) * 100)}%`;
+        
+        playSound.win();
+        isFlipping = false;
+        flipCoinBtn.disabled = false;
+        coinEl.classList.remove('flipping');
+      }, 1200); // Matches the css transition
+    }
+
+    flipCoinBtn.addEventListener('click', flipCoin);
+    coinEl.addEventListener('click', flipCoin);
+    document.getElementById('reset-coin-stats').addEventListener('click', resetCoinStats);
+
+
+    /* ==========================================================================
+       MAGIC 8-BALL LOGIC
+       ========================================================================== */
+    const askEightballBtn = document.getElementById('ask-eightball-btn');
+    const ballQuestionInput = document.getElementById('eightball-question');
+    const ballTrigger = document.getElementById('ball-trigger');
+    const ballLogo = document.getElementById('ball-logo');
+    const ballTriangle = document.getElementById('ball-triangle');
+    const ballAnswerText = document.getElementById('ball-answer-text');
+
+    const eightBallAnswers = [
+      "Yes\nDefinitely",
+      "Most\nLikely",
+      "Outlook\nGood",
+      "Signs point\nto Yes",
+      "Reply hazy\ntry again",
+      "Ask again\nlater",
+      "Better not\ntell you",
+      "Cannot\npredict",
+      "Don't count\non it",
+      "My sources\nsay No",
+      "Outlook\nnot good",
+      "Very\nDoubtful"
+    ];
+
+    function shakeOracle() {
+      if (ballTrigger.classList.contains('ball-shaking')) return;
+      
+      ballLogo.classList.remove('hidden');
+      ballTriangle.classList.remove('revealed');
+      
+      ballTrigger.classList.add('ball-shaking');
+      playSound.dice();
+      
+      setTimeout(() => {
+        const randAnswer = eightBallAnswers[Math.floor(Math.random() * eightBallAnswers.length)];
+        ballAnswerText.innerHTML = randAnswer.replace('\n', '<br>');
+        
+        ballLogo.classList.add('hidden');
+        ballTriangle.classList.add('revealed');
+        
+        playSound.win();
+        ballTrigger.classList.remove('ball-shaking');
+      }, 600);
+    }
+
+    askEightballBtn.addEventListener('click', shakeOracle);
+    ballTrigger.addEventListener('click', shakeOracle);
+
+
+    /* ==========================================================================
+       RANDOM NUMBER GENERATOR (RNG) LOGIC
+       ========================================================================== */
+    const generateRngBtn = document.getElementById('generate-rng-btn');
+    const rngMinInput = document.getElementById('rng-min');
+    const rngMaxInput = document.getElementById('rng-max');
+    const rngCountInput = document.getElementById('rng-count');
+    const rngUniqueCheckbox = document.getElementById('rng-unique');
+    const rngResult = document.getElementById('rng-result');
+    const rngHistoryList = document.getElementById('rng-history');
+
+    let rngHistory = [];
+
+    function generateNumber() {
+      const min = parseInt(rngMinInput.value) || 1;
+      const max = parseInt(rngMaxInput.value) || 100;
+      const count = parseInt(rngCountInput.value) || 1;
+      const unique = rngUniqueCheckbox.checked;
+
+      if (min >= max) {
+        alert("Maximum value must be larger than Minimum value.");
+        return;
+      }
+
+      const range = max - min + 1;
+      if (unique && count > range) {
+        alert(`Cannot generate ${count} unique numbers in a range of ${range}. Please increase the range or allow duplicates.`);
+        return;
+      }
+
+      generateRngBtn.disabled = true;
+      
+      // Interactive ticker effect
+      let iterations = 0;
+      const maxIterations = 15;
+      
+      const ticker = setInterval(() => {
+        if (count === 1) {
+          rngResult.className = 'rng-number';
+          rngResult.textContent = Math.floor(Math.random() * range) + min;
+        } else {
+          rngResult.className = 'rng-number multiple';
+          rngResult.innerHTML = Array.from({length: Math.min(count, 5)}, () => 
+            `<span class="rng-badge">${Math.floor(Math.random() * range) + min}</span>`
+          ).join('');
+        }
+        playSound.tick();
+        
+        iterations++;
+        if (iterations >= maxIterations) {
+          clearInterval(ticker);
+          finalizeRng(min, max, count, unique);
+        }
+      }, 50);
+    }
+
+    function finalizeRng(min, max, count, unique) {
+      const results = [];
+      const range = max - min + 1;
+      
+      if (unique) {
+        const pool = Array.from({length: range}, (_, i) => min + i);
+        for (let i = 0; i < count; i++) {
+          const randomIndex = Math.floor(Math.random() * pool.length);
+          results.push(pool.splice(randomIndex, 1)[0]);
+        }
+      } else {
+        for (let i = 0; i < count; i++) {
+          results.push(Math.floor(Math.random() * range) + min);
+        }
+      }
+
+      // Set Display
+      if (count === 1) {
+        rngResult.className = 'rng-number';
+        rngResult.textContent = results[0];
+        rngResult.classList.remove('result-pop');
+        void rngResult.offsetWidth;
+        rngResult.classList.add('result-pop');
+        // Append history
+        appendHistory(results[0]);
+      } else {
+        rngResult.className = 'rng-number multiple';
+        rngResult.innerHTML = results.map(val => `<span class="rng-badge">${val}</span>`).join('');
+        rngResult.classList.remove('result-pop');
+        void rngResult.offsetWidth;
+        rngResult.classList.add('result-pop');
+        // Append all to history
+        results.forEach(val => appendHistory(val));
+      }
+
+      playSound.win();
+      generateRngBtn.disabled = false;
+    }
+
+    function appendHistory(val) {
+      rngHistory.unshift(val);
+      if (rngHistory.length > 20) rngHistory.pop(); // Keep last 20
+      
+      rngHistoryList.innerHTML = rngHistory.map(h => `<div class="rng-history-item">${h}</div>`).join('');
+    }
+
+    generateRngBtn.addEventListener('click', generateNumber);
+
+
+    /* ==========================================================================
+       LIST RAFFLE LOGIC
+       ========================================================================== */
+    const raffleItemsInput = document.getElementById('raffle-items');
+    const raffleRemovePicked = document.getElementById('raffle-remove-picked');
+    const rafflePickBtn = document.getElementById('raffle-pick-btn');
+    const raffleOverlay = document.getElementById('raffle-overlay');
+    const raffleWinnerName = document.getElementById('raffle-winner-name');
+    const raffleCloseBtn = document.getElementById('raffle-close-btn');
+    const confettiContainer = document.getElementById('confetti-container');
+
+    function getRaffleEntrants() {
+      return raffleItemsInput.value
+        .split('\n')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+    }
+
+    function triggerConfetti() {
+      confettiContainer.innerHTML = '';
+      const colors = ['#f43f5e', '#a855f7', '#06b6d4', '#10b981', '#f59e0b'];
+      
+      for (let i = 0; i < 40; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'confetti-particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.animationDelay = Math.random() * 2 + 's';
+        particle.style.width = Math.random() * 8 + 6 + 'px';
+        particle.style.height = Math.random() * 14 + 6 + 'px';
+        confettiContainer.appendChild(particle);
+      }
+    }
+
+    rafflePickBtn.addEventListener('click', () => {
+      const entrants = getRaffleEntrants();
+      if (entrants.length === 0) {
+        alert("Please enter at least one entrant name.");
+        return;
+      }
+      
+      // Shuffle raffle entrants visually first (suspense)
+      rafflePickBtn.disabled = true;
+      let counter = 0;
+      const maxTicks = 12;
+      
+      const ticker = setInterval(() => {
+        const tempName = entrants[Math.floor(Math.random() * entrants.length)];
+        raffleWinnerName.textContent = tempName;
+        raffleOverlay.classList.add('active');
+        playSound.tick();
+        
+        counter++;
+        if (counter >= maxTicks) {
+          clearInterval(ticker);
+          
+          // Select actual winner
+          const finalIndex = Math.floor(Math.random() * entrants.length);
+          const winner = entrants[finalIndex];
+          raffleWinnerName.textContent = winner;
+          raffleWinnerName.classList.remove('result-pop');
+          void raffleWinnerName.offsetWidth;
+          raffleWinnerName.classList.add('result-pop');
+          
+          // Trigger win visual overlays
+          triggerConfetti();
+          playSound.win();
+          rafflePickBtn.disabled = false;
+          
+          // Remove if selected
+          if (raffleRemovePicked.checked) {
+            entrants.splice(finalIndex, 1);
+            raffleItemsInput.value = entrants.join('\n');
+          }
+        }
+      }, 80);
+    });
+
+    raffleCloseBtn.addEventListener('click', () => {
+      raffleOverlay.classList.remove('active');
+      confettiContainer.innerHTML = '';
+    });
+  </script>
+</body>
+</html>
