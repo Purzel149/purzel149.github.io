@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <meta name="description" content="The Tool Suite — A curated collection of premium web utilities including World Clock, Data Codec, Download Calculator, Randomizer, and Unit Converter.">
+  <meta name="theme-color" content="#0a0e1a">
+  <title>The — Tool Suite</title>
+
+  <!-- Premium Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060a14;
+      --ink: #f0f2f8;
+      --muted: #8892a8;
+      --font: 'Outfit', system-ui, -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --radius: 20px;
+      --radius-sm: 12px;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Aurora Background ─── */
+    .aurora {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .aurora__blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.35;
+      animation: auroraFloat 18s ease-in-out infinite alternate;
+    }
+    .aurora__blob:nth-child(1) {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+      top: -15%; left: 15%;
+      animation-duration: 20s;
+    }
+    .aurora__blob:nth-child(2) {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #a855f7 0%, transparent 70%);
+      top: -10%; right: 10%;
+      animation-duration: 16s;
+      animation-delay: -4s;
+    }
+    .aurora__blob:nth-child(3) {
+      width: 450px; height: 450px;
+      background: radial-gradient(circle, #06b6d4 0%, transparent 70%);
+      top: 10%; left: 50%;
+      animation-duration: 22s;
+      animation-delay: -8s;
+    }
+    .aurora__blob:nth-child(4) {
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, #10b981 0%, transparent 70%);
+      bottom: 20%; left: 5%;
+      animation-duration: 24s;
+      animation-delay: -12s;
+    }
+    .aurora__blob:nth-child(5) {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #f59e0b 0%, transparent 70%);
+      bottom: 10%; right: 15%;
+      animation-duration: 19s;
+      animation-delay: -6s;
+      opacity: 0.2;
+    }
+
+    @keyframes auroraFloat {
+      0%   { transform: translate(0, 0) scale(1); }
+      33%  { transform: translate(60px, -40px) scale(1.15); }
+      66%  { transform: translate(-40px, 30px) scale(0.9); }
+      100% { transform: translate(20px, -20px) scale(1.05); }
+    }
+
+    /* ─── Starfield / Particles ─── */
+    .particles {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px; height: 2px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 50%;
+      animation: particleDrift linear infinite;
+    }
+
+    @keyframes particleDrift {
+      0%   { opacity: 0; transform: translateY(0); }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-100vh); }
+    }
+
+    /* ─── Main Layout ─── */
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem 4rem;
+    }
+
+    /* ─── Header Section ─── */
+    .header {
+      text-align: center;
+      margin-bottom: 4rem;
+      animation: fadeUp 0.8s var(--ease-out) both;
+    }
+
+    .header__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      border-radius: 100px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      color: #818cf8;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+
+    .header__badge .dot {
+      width: 6px; height: 6px;
+      background: #6366f1;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.4); }
+    }
+
+    .header__title {
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #f0f2f8 0%, #c7d2fe 40%, #a78bfa 70%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+    }
+
+    .header__sub {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--muted);
+      font-weight: 300;
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Live Clock in Header */
+    .header__clock {
+      margin-top: 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      opacity: 0.7;
+      transition: opacity 0.3s;
+    }
+    .header__clock:hover { opacity: 1; }
+
+    /* ─── Tool Grid ─── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    /* ─── Tool Card ─── */
+    .card {
+      --accent: #6366f1;
+      --accent-rgb: 99, 102, 241;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 2rem;
+      border-radius: var(--radius);
+      background: rgba(12, 16, 30, 0.55);
+      backdrop-filter: blur(20px) saturate(1.3);
+      -webkit-backdrop-filter: blur(20px) saturate(1.3);
+      border: 1px solid rgba(var(--accent-rgb), 0.15);
+      text-decoration: none;
+      color: var(--ink);
+      cursor: pointer;
+      transition: transform 0.45s var(--ease-spring),
+                  border-color 0.4s ease,
+                  box-shadow 0.4s ease;
+      animation: fadeUp 0.7s var(--ease-out) both;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius);
+      background: radial-gradient(
+        ellipse 300px 200px at 50% 0%,
+        rgba(var(--accent-rgb), 0.08) 0%,
+        transparent 70%
+      );
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+
+    /* Glow ring on hover */
+    .card::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: var(--radius);
+      background: linear-gradient(
+        135deg,
+        rgba(var(--accent-rgb), 0.35),
+        transparent 50%,
+        rgba(var(--accent-rgb), 0.15)
+      );
+      opacity: 0;
+      z-index: -1;
+      transition: opacity 0.4s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-6px) scale(1.015);
+      border-color: rgba(var(--accent-rgb), 0.35);
+      box-shadow:
+        0 8px 32px rgba(var(--accent-rgb), 0.12),
+        0 0 60px rgba(var(--accent-rgb), 0.06);
+    }
+    .card:hover::before { opacity: 1; }
+    .card:hover::after { opacity: 1; }
+    .card:active { transform: translateY(-2px) scale(1.005); }
+
+    /* Stagger entrance */
+    .card:nth-child(1) { animation-delay: 0.15s; }
+    .card:nth-child(2) { animation-delay: 0.25s; }
+    .card:nth-child(3) { animation-delay: 0.35s; }
+    .card:nth-child(4) { animation-delay: 0.45s; }
+    .card:nth-child(5) { animation-delay: 0.55s; }
+
+    /* Per-card accent colors */
+    .card[data-tool="clock"] {
+      --accent: #6366f1;
+      --accent-rgb: 99, 102, 241;
+    }
+    .card[data-tool="codec"] {
+      --accent: #10b981;
+      --accent-rgb: 16, 185, 129;
+    }
+    .card[data-tool="down"] {
+      --accent: #a855f7;
+      --accent-rgb: 168, 85, 247;
+    }
+    .card[data-tool="random"] {
+      --accent: #f43f5e;
+      --accent-rgb: 244, 63, 94;
+    }
+    .card[data-tool="unit"] {
+      --accent: #f59e0b;
+      --accent-rgb: 245, 158, 11;
+    }
+
+    /* Card Icon */
+    .card__icon {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-sm);
+      background: rgba(var(--accent-rgb), 0.1);
+      border: 1px solid rgba(var(--accent-rgb), 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      transition: transform 0.4s var(--ease-spring), background 0.3s;
+    }
+    .card:hover .card__icon {
+      transform: scale(1.1) rotate(-3deg);
+      background: rgba(var(--accent-rgb), 0.18);
+    }
+
+    .card__icon svg {
+      width: 28px;
+      height: 28px;
+      color: var(--accent);
+    }
+
+    /* Card Text */
+    .card__title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.5rem;
+    }
+    .card__desc {
+      font-size: 0.92rem;
+      color: var(--muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    /* Card Footer / Tags */
+    .card__tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 1.25rem;
+    }
+    .tag {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      padding: 0.25rem 0.65rem;
+      border-radius: 100px;
+      background: rgba(var(--accent-rgb), 0.08);
+      color: var(--accent);
+      border: 1px solid rgba(var(--accent-rgb), 0.12);
+      text-transform: uppercase;
+    }
+
+    /* Card Arrow */
+    .card__arrow {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(var(--accent-rgb), 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s var(--ease-spring), background 0.3s;
+    }
+    .card:hover .card__arrow {
+      transform: translate(3px, -3px);
+      background: rgba(var(--accent-rgb), 0.18);
+    }
+    .card__arrow svg {
+      width: 16px;
+      height: 16px;
+      color: var(--accent);
+    }
+
+    /* ─── Footer ─── */
+    .footer {
+      margin-top: 5rem;
+      text-align: center;
+      animation: fadeUp 0.8s var(--ease-out) 0.7s both;
+    }
+    .footer__text {
+      font-size: 0.82rem;
+      color: var(--muted);
+      opacity: 0.5;
+      letter-spacing: 0.04em;
+    }
+    .footer__text a {
+      color: #818cf8;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer__text a:hover { color: #a5b4fc; }
+
+    /* ─── Animations ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── 3D Tilt Mouse Effect ─── */
+    .card.tilt-active {
+      transition: transform 0.08s linear, border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 720px) {
+      .page { padding: 2rem 1rem 3rem; }
+      .header { margin-bottom: 2.5rem; }
+      .grid { grid-template-columns: 1fr; gap: 1.2rem; }
+      .card { padding: 1.5rem; }
+      .footer { margin-top: 3rem; }
+    }
+
+    @media (min-width: 721px) and (max-width: 1000px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ─── Scroll-reveal ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ─── Custom Scrollbar ─── */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.3);
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.5);
+    }
+
+    /* ─── Focus States ─── */
+    .card:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Aurora Background -->
+  <div class="aurora" aria-hidden="true">
+    <div class="aurora__blob"></div>
+    <div class="aurora__blob"></div>
+    <div class="aurora__blob"></div>
+    <div class="aurora__blob"></div>
+    <div class="aurora__blob"></div>
+  </div>
+
+  <!-- Floating Particles (generated by JS) -->
+  <div class="particles" id="particles" aria-hidden="true"></div>
+
+  <!-- Page Content -->
+  <main class="page">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header__badge">
+        <span class="dot"></span>
+        All Systems Online
+      </div>
+      <h1 class="header__title">The Tool Suite</h1>
+      <p class="header__sub">
+        A curated collection of premium web utilities — fast, private, and built to look stunning.
+      </p>
+      <div class="header__clock" id="liveClock" aria-label="Current time"></div>
+    </header>
+
+    <!-- Tool Grid -->
+    <div class="grid" id="toolGrid">
+
+      <!-- 1 · World Clock -->
+      <a href="clock.html" class="card reveal" data-tool="clock" id="card-clock" aria-label="Open World Clock Toolbox">
+        <div class="card__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="card__arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="7" y1="17" x2="17" y2="7"/>
+            <polyline points="7 7 17 7 17 17"/>
+          </svg>
+        </div>
+        <h2 class="card__title">World Clock</h2>
+        <p class="card__desc">Track time across every timezone with a premium multi-clock dashboard, stopwatch, and timer built in.</p>
+        <div class="card__tags">
+          <span class="tag">Timezones</span>
+          <span class="tag">Stopwatch</span>
+          <span class="tag">Timer</span>
+        </div>
+      </a>
+
+      <!-- 2 · Data Codec -->
+      <a href="codec.html" class="card reveal" data-tool="codec" id="card-codec" aria-label="Open Data Codec">
+        <div class="card__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"/>
+            <polyline points="8 6 2 12 8 18"/>
+            <line x1="14" y1="4" x2="10" y2="20"/>
+          </svg>
+        </div>
+        <div class="card__arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="7" y1="17" x2="17" y2="7"/>
+            <polyline points="7 7 17 7 17 17"/>
+          </svg>
+        </div>
+        <h2 class="card__title">Data Codec</h2>
+        <p class="card__desc">Encode and decode Base64, URLs, HTML entities, hex, binary, and JWT tokens — all locally in your browser.</p>
+        <div class="card__tags">
+          <span class="tag">Base64</span>
+          <span class="tag">URL</span>
+          <span class="tag">JWT</span>
+          <span class="tag">Hex</span>
+        </div>
+      </a>
+
+      <!-- 3 · Download Calculator -->
+      <a href="down.html" class="card reveal" data-tool="down" id="card-down" aria-label="Open Download Time Calculator">
+        <div class="card__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </div>
+        <div class="card__arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="7" y1="17" x2="17" y2="7"/>
+            <polyline points="7 7 17 7 17 17"/>
+          </svg>
+        </div>
+        <h2 class="card__title">Download Calculator</h2>
+        <p class="card__desc">Precisely estimate download times with live calculations, overhead simulation, and estimated finish time.</p>
+        <div class="card__tags">
+          <span class="tag">Speed</span>
+          <span class="tag">File Size</span>
+          <span class="tag">ETA</span>
+        </div>
+      </a>
+
+      <!-- 4 · Randomizer Suite -->
+      <a href="random.html" class="card reveal" data-tool="random" id="card-random" aria-label="Open Aura Randomizer Suite">
+        <div class="card__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="3"/>
+            <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="16" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="8" cy="16" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <div class="card__arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="7" y1="17" x2="17" y2="7"/>
+            <polyline points="7 7 17 7 17 17"/>
+          </svg>
+        </div>
+        <h2 class="card__title">Randomizer Suite</h2>
+        <p class="card__desc">Roll dice, shuffle lists, generate passwords, spin wheels, and make random decisions with flair.</p>
+        <div class="card__tags">
+          <span class="tag">Dice</span>
+          <span class="tag">Shuffle</span>
+          <span class="tag">Passwords</span>
+          <span class="tag">Wheel</span>
+        </div>
+      </a>
+
+      <!-- 5 · Unit Converter -->
+      <a href="unit.html" class="card reveal" data-tool="unit" id="card-unit" aria-label="Open Unit Converter">
+        <div class="card__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h8"/>
+            <path d="M7 2v16"/>
+            <path d="M13 18h8"/>
+            <path d="M17 14v8"/>
+            <path d="M21 3l-8 8"/>
+            <path d="M21 11l-2-2"/>
+            <path d="M15 3l2 2"/>
+          </svg>
+        </div>
+        <div class="card__arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="7" y1="17" x2="17" y2="7"/>
+            <polyline points="7 7 17 7 17 17"/>
+          </svg>
+        </div>
+        <h2 class="card__title">Unit Converter</h2>
+        <p class="card__desc">Convert between length, mass, temperature, area, volume, speed, time, data, energy, and pressure units.</p>
+        <div class="card__tags">
+          <span class="tag">Length</span>
+          <span class="tag">Mass</span>
+          <span class="tag">Temp</span>
+          <span class="tag">Data</span>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p class="footer__text">
+        Built with care by <a href="https://github.com/Purzel149" target="_blank" rel="noopener noreferrer">me</a> · All tools run locally — your data never leaves your browser.
+      </p>
+    </footer>
+
+  </main>
+
+  <script>
+    /* ───────────────────────────
+       1. Live Clock
+    ─────────────────────────── */
+    const clockEl = document.getElementById('liveClock');
+    function updateClock() {
+      const now = new Date();
+      const opts = {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      };
+      clockEl.textContent = now.toLocaleDateString('en-US', opts);
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /* ───────────────────────────
+       2. Floating Particles
+    ─────────────────────────── */
+    (function generateParticles() {
+      const container = document.getElementById('particles');
+      const count = 50;
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const x = Math.random() * 100;
+        const size = Math.random() * 2 + 1;
+        const dur = Math.random() * 20 + 15;
+        const delay = Math.random() * -30;
+        p.style.cssText = `
+          left: ${x}%;
+          bottom: -5%;
+          width: ${size}px;
+          height: ${size}px;
+          animation-duration: ${dur}s;
+          animation-delay: ${delay}s;
+          opacity: ${Math.random() * 0.5 + 0.2};
+        `;
+        frag.appendChild(p);
+      }
+      container.appendChild(frag);
+    })();
+
+    /* ───────────────────────────
+       3. Scroll Reveal
+    ─────────────────────────── */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+
+    /* ───────────────────────────
+       4. 3D Tilt Effect on Cards
+    ─────────────────────────── */
+    const cards = document.querySelectorAll('.card');
+    const isTouchDevice = 'ontouchstart' in window;
+
+    if (!isTouchDevice) {
+      cards.forEach((card) => {
+        card.addEventListener('mouseenter', () => card.classList.add('tilt-active'));
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const rotateX = ((y - centerY) / centerY) * -6;
+          const rotateY = ((x - centerX) / centerX) * 6;
+          card.style.transform =
+            `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-6px) scale(1.015)`;
+        });
+        card.addEventListener('mouseleave', () => {
+          card.classList.remove('tilt-active');
+          card.style.transform = '';
+        });
+      });
+    }
+
+    /* ───────────────────────────
+       5. Keyboard Navigation
+    ─────────────────────────── */
+    document.addEventListener('keydown', (e) => {
+      if (e.key >= '1' && e.key <= '5') {
+        const idx = parseInt(e.key) - 1;
+        const links = document.querySelectorAll('.card');
+        if (links[idx]) links[idx].click();
+      }
+    });
+  </script>
+</body>
+</html>
