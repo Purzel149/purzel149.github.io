@@ -1425,6 +1425,26 @@
       return `<span style="font-size: ${width * 0.8}px; vertical-align: middle;">${escapeHTML(meta.flag || '🌐')}</span>`;
     }
 
+    function createFlagElement(meta, width = 24) {
+      if (meta.cc) {
+        const img = document.createElement('img');
+        img.src = `https://flagcdn.com/w40/${encodeURIComponent(meta.cc.toLowerCase())}.png`;
+        img.width = width;
+        img.alt = `${meta.country} flag`;
+        img.style.borderRadius = '2px';
+        img.style.verticalAlign = 'middle';
+        img.style.boxShadow = '0 1px 3px rgba(0,0,0,0.25)';
+        img.loading = 'lazy';
+        img.referrerPolicy = 'no-referrer';
+        return img;
+      }
+      const span = document.createElement('span');
+      span.style.fontSize = `${width * 0.8}px`;
+      span.style.verticalAlign = 'middle';
+      span.textContent = meta.flag || '🌐';
+      return span;
+    }
+
     function readStorageJSON(primaryKey, legacyKey, fallback) {
       const fallbackCopy = Array.isArray(fallback) ? [...fallback] : { ...fallback };
       try {
@@ -1616,70 +1636,220 @@
       card.dataset.tz = tz;
       card.dataset.index = index;
 
-      card.innerHTML = `
-        <div class="analog-wrapper">
-          <svg class="analog-clock" viewBox="0 0 100 100">
-            <circle class="clock-bg" cx="50" cy="50" r="46"></circle>
-            <circle class="clock-face-rim" cx="50" cy="50" r="46" fill="none" stroke-width="2.5"></circle>
-            <!-- Markers -->
-            <line class="clock-tick" x1="50" y1="6" x2="50" y2="10"></line>
-            <line class="clock-tick" x1="50" y1="94" x2="50" y2="90"></line>
-            <line class="clock-tick" x1="6" y1="50" x2="10" y2="50"></line>
-            <line class="clock-tick" x1="94" y1="50" x2="90" y2="50"></line>
-            <!-- Hands -->
-            <line id="hrHand-${index}" class="clock-hand" x1="50" y1="50" x2="50" y2="28" stroke-width="4.5"></line>
-            <line id="minHand-${index}" class="clock-hand" x1="50" y1="50" x2="50" y2="18" stroke-width="3"></line>
-            <line id="secHand-${index}" class="clock-hand second-hand" x1="50" y1="55" x2="50" y2="12" stroke-width="1.5"></line>
-            <circle class="clock-center-pin" cx="50" cy="50" r="3.5"></circle>
-          </svg>
-        </div>
-        <div class="card-info">
-          <div class="card-header">
-            <div class="location-details">
-              <div class="city-name-row">
-                <span class="city-flag" aria-hidden="true">${getFlagHTML(meta, 22)}</span>
-                <h3 class="city-name"></h3>
-              </div>
-              <span class="timezone-name">${escapeHTML(tz)}</span>
-            </div>
-            <div class="card-actions">
-              <button class="options-btn" aria-label="Clock Options" aria-expanded="false">&#8942;</button>
-              <div class="options-menu">
-                <button class="menu-item move-up-btn" data-index="${index}">Move Up</button>
-                <button class="menu-item move-down-btn" data-index="${index}">Move Down</button>
-                <button class="menu-item rename-btn" data-tz="${escapeHTML(tz)}">Rename</button>
-                <button class="menu-item danger remove-btn" data-tz="${escapeHTML(tz)}">Remove</button>
-              </div>
-            </div>
-          </div>
-          
-          <div class="time-container">
-            <div class="digital-time" id="digTime-${index}">00:00:00</div>
-            <div class="date-row">
-              <span id="digDate-${index}">Date</span>
-              <span class="offset-badge" id="offsetBadge-${index}">${escapeHTML(getTimezoneShortOffset(tz))}</span>
-            </div>
-            <div id="relativeOffset-${index}" class="date-row" style="margin-top: 3px; font-size: 11px;"></div>
-            <div class="daylight-badge" id="podBadge-${index}">
-              <span class="pod-emoji">🌙</span>&nbsp;<span class="pod-text">Night</span>
-            </div>
-          </div>
-        </div>
-      `;
+      // Analog Wrapper
+      const analogWrapper = document.createElement('div');
+      analogWrapper.className = 'analog-wrapper';
 
-      card.querySelector('.city-name').textContent = customName;
+      const svgNS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('class', 'analog-clock');
+      svg.setAttribute('viewBox', '0 0 100 100');
+
+      const bgCircle = document.createElementNS(svgNS, 'circle');
+      bgCircle.setAttribute('class', 'clock-bg');
+      bgCircle.setAttribute('cx', '50'); bgCircle.setAttribute('cy', '50'); bgCircle.setAttribute('r', '46');
+
+      const rimCircle = document.createElementNS(svgNS, 'circle');
+      rimCircle.setAttribute('class', 'clock-face-rim');
+      rimCircle.setAttribute('cx', '50'); rimCircle.setAttribute('cy', '50'); rimCircle.setAttribute('r', '46');
+      rimCircle.setAttribute('fill', 'none'); rimCircle.setAttribute('stroke-width', '2.5');
+
+      svg.appendChild(bgCircle);
+      svg.appendChild(rimCircle);
+
+      const markers = [
+        {x1: 50, y1: 6, x2: 50, y2: 10},
+        {x1: 50, y1: 94, x2: 50, y2: 90},
+        {x1: 6, y1: 50, x2: 10, y2: 50},
+        {x1: 94, y1: 50, x2: 90, y2: 50}
+      ];
+      markers.forEach(m => {
+        const line = document.createElementNS(svgNS, 'line');
+        line.setAttribute('class', 'clock-tick');
+        line.setAttribute('x1', m.x1); line.setAttribute('y1', m.y1);
+        line.setAttribute('x2', m.x2); line.setAttribute('y2', m.y2);
+        svg.appendChild(line);
+      });
+
+      const hrHand = document.createElementNS(svgNS, 'line');
+      hrHand.id = `hrHand-${index}`;
+      hrHand.setAttribute('class', 'clock-hand');
+      hrHand.setAttribute('x1', '50'); hrHand.setAttribute('y1', '50');
+      hrHand.setAttribute('x2', '50'); hrHand.setAttribute('y2', '28');
+      hrHand.setAttribute('stroke-width', '4.5');
+      svg.appendChild(hrHand);
+
+      const minHand = document.createElementNS(svgNS, 'line');
+      minHand.id = `minHand-${index}`;
+      minHand.setAttribute('class', 'clock-hand');
+      minHand.setAttribute('x1', '50'); minHand.setAttribute('y1', '50');
+      minHand.setAttribute('x2', '50'); minHand.setAttribute('y2', '18');
+      minHand.setAttribute('stroke-width', '3');
+      svg.appendChild(minHand);
+
+      const secHand = document.createElementNS(svgNS, 'line');
+      secHand.id = `secHand-${index}`;
+      secHand.setAttribute('class', 'clock-hand second-hand');
+      secHand.setAttribute('x1', '50'); secHand.setAttribute('y1', '55');
+      secHand.setAttribute('x2', '50'); secHand.setAttribute('y2', '12');
+      secHand.setAttribute('stroke-width', '1.5');
+      svg.appendChild(secHand);
+
+      const centerPin = document.createElementNS(svgNS, 'circle');
+      centerPin.setAttribute('class', 'clock-center-pin');
+      centerPin.setAttribute('cx', '50'); centerPin.setAttribute('cy', '50'); centerPin.setAttribute('r', '3.5');
+      svg.appendChild(centerPin);
+
+      analogWrapper.appendChild(svg);
+      card.appendChild(analogWrapper);
+
+      // Card Info
+      const cardInfo = document.createElement('div');
+      cardInfo.className = 'card-info';
+
+      // Card Header
+      const cardHeader = document.createElement('div');
+      cardHeader.className = 'card-header';
+
+      const locationDetails = document.createElement('div');
+      locationDetails.className = 'location-details';
+
+      const cityNameRow = document.createElement('div');
+      cityNameRow.className = 'city-name-row';
+
+      const cityFlag = document.createElement('span');
+      cityFlag.className = 'city-flag';
+      cityFlag.setAttribute('aria-hidden', 'true');
+      cityFlag.appendChild(createFlagElement(meta, 22));
+
+      const cityName = document.createElement('h3');
+      cityName.className = 'city-name';
+      cityName.textContent = customName;
+
+      cityNameRow.appendChild(cityFlag);
+      cityNameRow.appendChild(cityName);
+
+      const timezoneName = document.createElement('span');
+      timezoneName.className = 'timezone-name';
+      timezoneName.textContent = tz;
+
+      locationDetails.appendChild(cityNameRow);
+      locationDetails.appendChild(timezoneName);
+
+      // Card Actions
+      const cardActions = document.createElement('div');
+      cardActions.className = 'card-actions';
+
+      const optionsBtn = document.createElement('button');
+      optionsBtn.className = 'options-btn';
+      optionsBtn.setAttribute('aria-label', 'Clock Options');
+      optionsBtn.setAttribute('aria-expanded', 'false');
+      optionsBtn.innerHTML = '&#8942;';
+
+      const optionsMenu = document.createElement('div');
+      optionsMenu.className = 'options-menu';
+
+      const moveUpBtn = document.createElement('button');
+      moveUpBtn.className = 'menu-item move-up-btn';
+      moveUpBtn.dataset.index = index;
+      moveUpBtn.textContent = 'Move Up';
+
+      const moveDownBtn = document.createElement('button');
+      moveDownBtn.className = 'menu-item move-down-btn';
+      moveDownBtn.dataset.index = index;
+      moveDownBtn.textContent = 'Move Down';
+
+      const renameBtn = document.createElement('button');
+      renameBtn.className = 'menu-item rename-btn';
+      renameBtn.dataset.tz = tz;
+      renameBtn.textContent = 'Rename';
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'menu-item danger remove-btn';
+      removeBtn.dataset.tz = tz;
+      removeBtn.textContent = 'Remove';
+
+      optionsMenu.appendChild(moveUpBtn);
+      optionsMenu.appendChild(moveDownBtn);
+      optionsMenu.appendChild(renameBtn);
+      optionsMenu.appendChild(removeBtn);
+
+      cardActions.appendChild(optionsBtn);
+      cardActions.appendChild(optionsMenu);
+
+      cardHeader.appendChild(locationDetails);
+      cardHeader.appendChild(cardActions);
+      cardInfo.appendChild(cardHeader);
+
+      // Time Container
+      const timeContainer = document.createElement('div');
+      timeContainer.className = 'time-container';
+
+      const digitalTime = document.createElement('div');
+      digitalTime.className = 'digital-time';
+      digitalTime.id = `digTime-${index}`;
+      digitalTime.textContent = '00:00:00';
+
+      const dateRow = document.createElement('div');
+      dateRow.className = 'date-row';
+
+      const digDate = document.createElement('span');
+      digDate.id = `digDate-${index}`;
+      digDate.textContent = 'Date';
+
+      const offsetBadge = document.createElement('span');
+      offsetBadge.className = 'offset-badge';
+      offsetBadge.id = `offsetBadge-${index}`;
+      offsetBadge.textContent = getTimezoneShortOffset(tz);
+
+      dateRow.appendChild(digDate);
+      dateRow.appendChild(offsetBadge);
+
+      const relativeOffset = document.createElement('div');
+      relativeOffset.id = `relativeOffset-${index}`;
+      relativeOffset.className = 'date-row';
+      relativeOffset.style.marginTop = '3px';
+      relativeOffset.style.fontSize = '11px';
+
+      const daylightBadge = document.createElement('div');
+      daylightBadge.className = 'daylight-badge';
+      daylightBadge.id = `podBadge-${index}`;
+
+      const podEmoji = document.createElement('span');
+      podEmoji.className = 'pod-emoji';
+      podEmoji.textContent = '🌙';
+
+      const space = document.createTextNode('\u00A0');
+
+      const podText = document.createElement('span');
+      podText.className = 'pod-text';
+      podText.textContent = 'Night';
+
+      daylightBadge.appendChild(podEmoji);
+      daylightBadge.appendChild(space);
+      daylightBadge.appendChild(podText);
+
+      timeContainer.appendChild(digitalTime);
+      timeContainer.appendChild(dateRow);
+      timeContainer.appendChild(relativeOffset);
+      timeContainer.appendChild(daylightBadge);
+
+      cardInfo.appendChild(timeContainer);
+      card.appendChild(cardInfo);
 
       // Event listeners for actions
-      const optionsBtn = card.querySelector('.options-btn');
+      // Using card.querySelector is still fine because optionsBtn has class options-btn
+      // but to avoid shadowing, we'll just redefine optionsBtn variable below:
+      const optionsBtnNode = card.querySelector('.options-btn');
       const menu = card.querySelector('.options-menu');
 
-      optionsBtn.addEventListener('click', (e) => {
+      optionsBtnNode.addEventListener('click', (e) => {
         e.stopPropagation();
         const isOpen = menu.classList.contains('active');
         closeAllMenus();
         if (!isOpen) {
           menu.classList.add('active');
-          optionsBtn.setAttribute('aria-expanded', 'true');
+          optionsBtnNode.setAttribute('aria-expanded', 'true');
         }
       });
 
@@ -2120,19 +2290,47 @@
           displayCountryStr += ` (${item.abbr})`;
         }
 
-        row.innerHTML = `
-          <div class="search-item-left">
-            <span class="search-flag" aria-hidden="true">${getFlagHTML(item.meta, 26)}</span>
-            <div class="search-city-details">
-              <span class="search-city-name">${escapeHTML(item.meta.city)}</span>
-              <span class="search-country-name">${escapeHTML(displayCountryStr)} (${escapeHTML(item.tz)})</span>
-            </div>
-          </div>
-          <div class="search-item-right">
-            <span class="search-time">${escapeHTML(localTimeStr)}</span>
-            <span class="search-offset">${escapeHTML(offsetStr)}</span>
-          </div>
-        `;
+        const leftDiv = document.createElement('div');
+        leftDiv.className = 'search-item-left';
+
+        const flagSpan = document.createElement('span');
+        flagSpan.className = 'search-flag';
+        flagSpan.setAttribute('aria-hidden', 'true');
+        flagSpan.appendChild(createFlagElement(item.meta, 26));
+
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'search-city-details';
+
+        const cityNameSpan = document.createElement('span');
+        cityNameSpan.className = 'search-city-name';
+        cityNameSpan.textContent = item.meta.city;
+
+        const countryNameSpan = document.createElement('span');
+        countryNameSpan.className = 'search-country-name';
+        countryNameSpan.textContent = `${displayCountryStr} (${item.tz})`;
+
+        detailsDiv.appendChild(cityNameSpan);
+        detailsDiv.appendChild(countryNameSpan);
+
+        leftDiv.appendChild(flagSpan);
+        leftDiv.appendChild(detailsDiv);
+
+        const rightDiv = document.createElement('div');
+        rightDiv.className = 'search-item-right';
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'search-time';
+        timeSpan.textContent = localTimeStr;
+
+        const offsetSpan = document.createElement('span');
+        offsetSpan.className = 'search-offset';
+        offsetSpan.textContent = offsetStr;
+
+        rightDiv.appendChild(timeSpan);
+        rightDiv.appendChild(offsetSpan);
+
+        row.appendChild(leftDiv);
+        row.appendChild(rightDiv);
 
         row.addEventListener('click', () => {
           addCity(item.tz);
@@ -2192,7 +2390,7 @@
       cancelAnimationFrame(swTimerId);
       swElapsedSec = 0;
       swLaps = [];
-      el.swDisplay.innerHTML = `00:00:00<span class="stopwatch-ms">.00</span>`;
+      el.swDisplay.innerHTML = '00:00:00<span class="stopwatch-ms">.00</span>';
       el.swStartBtn.textContent = 'Start';
       el.swStartBtn.className = 'btn btn-success stopwatch-btn';
       el.swLapBtn.disabled = true;
@@ -2281,11 +2479,18 @@
           return `${String(m).padStart(2, '0')}:${String(sc).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
         };
 
-        row.innerHTML = `
-          <span>Lap ${lap.num}</span>
-          <span>${formatSec(lap.lap)}</span>
-          <span>${formatSec(lap.total)}</span>
-        `;
+        const numSpan = document.createElement('span');
+        numSpan.textContent = `Lap ${lap.num}`;
+
+        const lapSpan = document.createElement('span');
+        lapSpan.textContent = formatSec(lap.lap);
+
+        const totalSpan = document.createElement('span');
+        totalSpan.textContent = formatSec(lap.total);
+
+        row.appendChild(numSpan);
+        row.appendChild(lapSpan);
+        row.appendChild(totalSpan);
         el.swLapsList.appendChild(row);
       });
     }
