@@ -903,8 +903,9 @@
     function base64Encode(str, urlSafe = false) {
       const utf8Bytes = new TextEncoder().encode(str);
       let binary = "";
-      for (let i = 0; i < utf8Bytes.length; i++) {
-        binary += String.fromCharCode(utf8Bytes[i]);
+      const chunkSize = 8192;
+      for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, utf8Bytes.subarray(i, i + chunkSize));
       }
       let b64 = btoa(binary);
       if (urlSafe) {

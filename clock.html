@@ -1834,6 +1834,9 @@
     }
 
     // ---------- Clock Ticking engine ----------
+    const timeFormatterCache = new Map();
+    const dateFormatterCache = new Map();
+
     function updateClockSystem() {
       const liveNow = new Date();
       // Apply scrubber offset
@@ -1852,25 +1855,35 @@
         let formattedDate = '';
         
         try {
-          const timeParts = new Intl.DateTimeFormat('en-US', {
-            timeZone: tz,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-          }).formatToParts(simulationDate);
+          let timeFmt = timeFormatterCache.get(tz);
+          if (!timeFmt) {
+            timeFmt = new Intl.DateTimeFormat('en-US', {
+              timeZone: tz,
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            });
+            timeFormatterCache.set(tz, timeFmt);
+          }
+          const timeParts = timeFmt.formatToParts(simulationDate);
 
           hr = parseInt(timeParts.find(p => p.type === 'hour').value);
           min = parseInt(timeParts.find(p => p.type === 'minute').value);
           sec = parseInt(timeParts.find(p => p.type === 'second').value);
           
-          formattedDate = new Intl.DateTimeFormat('en-US', {
-            timeZone: tz,
-            weekday: 'short',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-          }).format(simulationDate);
+          let dateFmt = dateFormatterCache.get(tz);
+          if (!dateFmt) {
+            dateFmt = new Intl.DateTimeFormat('en-US', {
+              timeZone: tz,
+              weekday: 'short',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            });
+            dateFormatterCache.set(tz, dateFmt);
+          }
+          formattedDate = dateFmt.format(simulationDate);
 
           // Digital clock string builders
           let dispHr = hr;
@@ -2120,19 +2133,47 @@
           displayCountryStr += ` (${item.abbr})`;
         }
 
-        row.innerHTML = `
-          <div class="search-item-left">
-            <span class="search-flag" aria-hidden="true">${getFlagHTML(item.meta, 26)}</span>
-            <div class="search-city-details">
-              <span class="search-city-name">${escapeHTML(item.meta.city)}</span>
-              <span class="search-country-name">${escapeHTML(displayCountryStr)} (${escapeHTML(item.tz)})</span>
-            </div>
-          </div>
-          <div class="search-item-right">
-            <span class="search-time">${escapeHTML(localTimeStr)}</span>
-            <span class="search-offset">${escapeHTML(offsetStr)}</span>
-          </div>
-        `;
+        const leftDiv = document.createElement('div');
+        leftDiv.className = 'search-item-left';
+
+        const flagSpan = document.createElement('span');
+        flagSpan.className = 'search-flag';
+        flagSpan.setAttribute('aria-hidden', 'true');
+        flagSpan.innerHTML = getFlagHTML(item.meta, 26);
+
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'search-city-details';
+
+        const citySpan = document.createElement('span');
+        citySpan.className = 'search-city-name';
+        citySpan.textContent = item.meta.city;
+
+        const countrySpan = document.createElement('span');
+        countrySpan.className = 'search-country-name';
+        countrySpan.textContent = `${displayCountryStr} (${item.tz})`;
+
+        detailsDiv.appendChild(citySpan);
+        detailsDiv.appendChild(countrySpan);
+
+        leftDiv.appendChild(flagSpan);
+        leftDiv.appendChild(detailsDiv);
+
+        const rightDiv = document.createElement('div');
+        rightDiv.className = 'search-item-right';
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'search-time';
+        timeSpan.textContent = localTimeStr;
+
+        const offsetSpan = document.createElement('span');
+        offsetSpan.className = 'search-offset';
+        offsetSpan.textContent = offsetStr;
+
+        rightDiv.appendChild(timeSpan);
+        rightDiv.appendChild(offsetSpan);
+
+        row.appendChild(leftDiv);
+        row.appendChild(rightDiv);
 
         row.addEventListener('click', () => {
           addCity(item.tz);

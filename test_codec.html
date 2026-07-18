@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Codec</title>
+</head>
+<body>
+    <script>
+        function base64EncodeConcat(str, urlSafe = false) {
+            const utf8Bytes = new TextEncoder().encode(str);
+            let binary = "";
+            for (let i = 0; i < utf8Bytes.length; i++) {
+                binary += String.fromCharCode(utf8Bytes[i]);
+            }
+            let b64 = btoa(binary);
+            if (urlSafe) {
+                b64 = b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+            }
+            return b64;
+        }
+
+        function base64EncodeChunk(str, urlSafe = false) {
+            const utf8Bytes = new TextEncoder().encode(str);
+            let binary = "";
+            const chunkSize = 8192;
+            for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
+                binary += String.fromCharCode.apply(null, utf8Bytes.subarray(i, i + chunkSize));
+            }
+            let b64 = btoa(binary);
+            if (urlSafe) {
+                b64 = b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+            }
+            return b64;
+        }
+
+        const testStr = "This is a test string! 😊 It contains some special characters and unicode.";
+        const encodedConcat = base64EncodeConcat(testStr);
+        const encodedChunk = base64EncodeChunk(testStr);
+        console.log("Normal Base64:");
+        console.log("Concat: ", encodedConcat);
+        console.log("Chunk:  ", encodedChunk);
+        console.log("Match:  ", encodedConcat === encodedChunk);
+
+        const testStrURLSafe = "This is a test string! 😊 It contains some special characters and unicode. ++ // ==";
+        const encodedConcatURLSafe = base64EncodeConcat(testStrURLSafe, true);
+        const encodedChunkURLSafe = base64EncodeChunk(testStrURLSafe, true);
+
+        console.log("URLSafe Base64:");
+        console.log("Concat: ", encodedConcatURLSafe);
+        console.log("Chunk:  ", encodedChunkURLSafe);
+        console.log("Match:  ", encodedConcatURLSafe === encodedChunkURLSafe);
+
+    </script>
+</body>
+</html>
