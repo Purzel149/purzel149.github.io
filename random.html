@@ -2370,7 +2370,7 @@ Eva</textarea>
       
       setTimeout(() => {
         const randAnswer = eightBallAnswers[Math.floor(Math.random() * eightBallAnswers.length)];
-        ballAnswerText.innerHTML = randAnswer.replace('\n', '<br>');
+        ballAnswerText.innerHTML = randAnswer.replace(/\n/g, '<br>');
         
         ballLogo.classList.add('hidden');
         ballTriangle.classList.add('revealed');
