@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://flagcdn.com data:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-lVgz7NE+1d6ylnNkHS8+u5jzqZvsNCt289TVgmC2Zv4='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://flagcdn.com data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'; upgrade-insecure-requests">
   <title>World Clock Toolbox - Premium Clock Hub</title>
   
   <!-- Premium Fonts -->
@@ -2004,6 +2004,9 @@
     }
 
     // ---------- Clock Ticking engine ----------
+    const timeFormatterCache = new Map();
+    const dateFormatterCache = new Map();
+
     function updateClockSystem() {
       const liveNow = new Date();
       // Apply scrubber offset
@@ -2022,25 +2025,35 @@
         let formattedDate = '';
         
         try {
-          const timeParts = new Intl.DateTimeFormat('en-US', {
-            timeZone: tz,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-          }).formatToParts(simulationDate);
+          let timeFmt = timeFormatterCache.get(tz);
+          if (!timeFmt) {
+            timeFmt = new Intl.DateTimeFormat('en-US', {
+              timeZone: tz,
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            });
+            timeFormatterCache.set(tz, timeFmt);
+          }
+          const timeParts = timeFmt.formatToParts(simulationDate);
 
           hr = parseInt(timeParts.find(p => p.type === 'hour').value);
           min = parseInt(timeParts.find(p => p.type === 'minute').value);
           sec = parseInt(timeParts.find(p => p.type === 'second').value);
           
-          formattedDate = new Intl.DateTimeFormat('en-US', {
-            timeZone: tz,
-            weekday: 'short',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-          }).format(simulationDate);
+          let dateFmt = dateFormatterCache.get(tz);
+          if (!dateFmt) {
+            dateFmt = new Intl.DateTimeFormat('en-US', {
+              timeZone: tz,
+              weekday: 'short',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            });
+            dateFormatterCache.set(tz, dateFmt);
+          }
+          formattedDate = dateFmt.format(simulationDate);
 
           // Digital clock string builders
           let dispHr = hr;

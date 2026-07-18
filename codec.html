@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-6rN0kfhjgfwxAJ42Uyurvgqof9lrwwYmXo/Fv4mTh0U=' 'sha256-pI90K69hLeVth3GTh5PlaCt6eDZpxuLxOqt80b/eK30='; style-src 'self' 'unsafe-inline'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'; upgrade-insecure-requests">
   <meta name="description" content="Feature-rich local encoder and decoder for Base64, URLs, HTML entities, Hexadecimal, Binary, and JWT tokens.">
   <meta name="theme-color" content="#0f172a">
   <title>Data Codec</title>
@@ -903,8 +903,9 @@
     function base64Encode(str, urlSafe = false) {
       const utf8Bytes = new TextEncoder().encode(str);
       let binary = "";
-      for (let i = 0; i < utf8Bytes.length; i++) {
-        binary += String.fromCharCode(utf8Bytes[i]);
+      const chunkSize = 8192;
+      for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, utf8Bytes.subarray(i, i + chunkSize));
       }
       let b64 = btoa(binary);
       if (urlSafe) {
