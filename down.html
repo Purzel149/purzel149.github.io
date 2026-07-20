@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="referrer" content="no-referrer">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-FwZmi+oTsvTQ0qIaqxuN/f6274aCW2AFRrjQRktu9BQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'; upgrade-insecure-requests">
     <meta name="description" content="Berechne präzise Download-Zeiten mit unserem kostenlosen Online-Tool. Live-Berechnung mit Overhead-Simulation und Fertig-Zeit.">
     <meta name="keywords" content="Download Calculator, Download Zeit, Internetgeschwindigkeit, Dateigröße">
     <meta name="author" content="Purzel149">
@@ -14,11 +14,6 @@
     <meta property="og:type" content="website">
     <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'%3E%3Crect fill='%23667eea' width='1200' height='630'/%3E%3Ctext x='50%25' y='50%25' font-size='72' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'%3EDownload Calculator%3C/text%3E%3C/svg%3E">
     <title>Download Time Calculator</title>
-    <script crossorigin="anonymous" integrity="sha384-tMH8h3BGESGckSAVGZ82T9n90ztNXxvdwvdM6UoR56cYcf+0iGXBliJ29D+wZ/x8" src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" defer></script>
-    <script crossorigin="anonymous" integrity="sha384-bm7MnzvK++ykSwVJ2tynSE5TRdN+xL418osEVF2DE/L/gfWHj91J2Sphe582B1Bh" src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" defer></script>
-    <script crossorigin="anonymous" integrity="sha384-1qlE7MZPM2pHD/pBZCU/yB8UCP52RYL8bge/qNdfNBCWToySp8/M+JL2waXU4hjJ" src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js" defer></script>
-    <link rel="preconnect" href="https://unpkg.com" crossorigin>
-
     <style>
         /* === Base & Reset === */
         :root {
@@ -628,10 +623,100 @@
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div class="page-wrapper">
+        <div class="container">
+            <div class="header">
+                <h1 class="page-title">Download Calculator</h1>
+                <p class="page-subtitle">Berechne die exakte Download-Zeit in Echtzeit</p>
+            </div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+            <div class="main-card">
+                <div class="overhead-section">
+                    <div class="overhead-row">
+                        <div class="overhead-left">
+                            <div class="overhead-title-row">
+                                <h3 class="overhead-title">Reale Bedingungen</h3>
+                                <button id="overheadInfoBtn" class="info-btn" type="button" aria-label="Info zum Protokoll-Overhead" aria-expanded="false">
+                                    <svg class="info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="overhead-subtitle">Protokoll-Overhead berücksichtigen</p>
+                        </div>
+                        <div class="overhead-select-wrap">
+                            <select id="overheadProfile" class="select-base select-full" aria-label="Overhead-Profil"></select>
+                        </div>
+                    </div>
+
+                    <div id="overheadInfo" class="info-box" hidden>
+                        <h4 class="info-box-title">📡 Was ist Protokoll-Overhead?</h4>
+                        <p class="info-box-text">Bei jeder Datenübertragung werden zusätzlich zur eigentlichen Datei auch Verwaltungsinformationen (Header, Prüfsummen, Bestätigungen) übertragen. Dieser "Overhead" reduziert die effektive Geschwindigkeit.</p>
+                        <div class="info-box-list">
+                            <p>• <strong>HTTP/FTP:</strong> Geringe Overheads (~7-8%) durch einfache Protokolle</p>
+                            <p>• <strong>HTTPS/TLS:</strong> Verschlüsselung erhöht Overhead (~12%)</p>
+                            <p>• <strong>SMB/CIFS:</strong> Netzwerk-Dateisysteme haben höhere Overheads (~20%)</p>
+                            <p>• <strong>VPN/SFTP:</strong> Verschlüsselter Tunnel = mehr Overhead (~14-15%)</p>
+                        </div>
+                    </div>
+                    <p id="activeProfile" class="active-profile" hidden></p>
+                </div>
+
+                <div class="input-section">
+                    <label class="input-label" for="fileSize">Dateigröße</label>
+                    <div class="input-group">
+                        <input id="fileSize" type="number" placeholder="z.B. 20" class="input-base" min="0" step="0.1">
+                        <select id="fileSizeUnit" class="select-base" aria-label="Dateigrößeneinheit"></select>
+                    </div>
+                </div>
+
+                <div class="input-section-lg">
+                    <label class="input-label" for="speed">Internetgeschwindigkeit</label>
+                    <div class="input-group">
+                        <input id="speed" type="number" placeholder="z.B. 50" class="input-base" min="0" step="0.1">
+                        <select id="speedUnit" class="select-base" aria-label="Geschwindigkeitseinheit"></select>
+                    </div>
+                </div>
+
+                <div class="input-section-lg">
+                    <span class="input-label-lg">Schnellwahl</span>
+                    <div id="presetsGrid" class="presets-grid"></div>
+                </div>
+
+                <div id="resultDetails" class="result-card" hidden>
+                    <div class="result-grid">
+                        <div>
+                            <p class="result-label">Download-Zeit</p>
+                            <p id="resultTime" class="result-time"></p>
+                        </div>
+                        <div>
+                            <p class="result-label">Fertig am</p>
+                            <p id="finishValue" class="finish-value"></p>
+                        </div>
+                    </div>
+                    <div class="progress-section">
+                        <div class="speed-row">
+                            <span class="speed-label">Geschwindigkeit</span>
+                            <span id="speedValue" class="speed-value"></span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div id="progressFill" class="progress-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="emptyResult" class="result-card result-card-centered">
+                    <p class="empty-result-text">Gib die Dateigröße und Internetgeschwindigkeit ein, um die Download-Zeit zu berechnen.</p>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>💡 Tipp: Nutze "Reale Bedingungen" für genauere Vorhersagen</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
 
         const PRESETS = [
             { name: "4K Film", size: 20, unit: "GB" },
@@ -702,280 +787,96 @@
             return `${dayName} um ${time}`;
         }
 
-        function DownloadCalculator() {
-            const [fileSize, setFileSize] = useState("");
-            const [fileSizeUnit, setFileSizeUnit] = useState("GB");
-            const [speed, setSpeed] = useState("");
-            const [speedUnit, setSpeedUnit] = useState("Mbit/s");
-            // Ersetze Toggle durch Dropdown-Profil
-            const [overheadProfile, setOverheadProfile] = useState('generic');
-            const [darkMode, setDarkMode] = useState(false);
-            const [showOverheadInfo, setShowOverheadInfo] = useState(false);
+        const els = {
+            fileSize: document.getElementById('fileSize'),
+            fileSizeUnit: document.getElementById('fileSizeUnit'),
+            speed: document.getElementById('speed'),
+            speedUnit: document.getElementById('speedUnit'),
+            overheadProfile: document.getElementById('overheadProfile'),
+            overheadInfoBtn: document.getElementById('overheadInfoBtn'),
+            overheadInfo: document.getElementById('overheadInfo'),
+            activeProfile: document.getElementById('activeProfile'),
+            presetsGrid: document.getElementById('presetsGrid'),
+            resultDetails: document.getElementById('resultDetails'),
+            emptyResult: document.getElementById('emptyResult'),
+            resultTime: document.getElementById('resultTime'),
+            finishValue: document.getElementById('finishValue'),
+            speedValue: document.getElementById('speedValue'),
+            progressFill: document.getElementById('progressFill')
+        };
 
-            useEffect(() => {
-                const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                setDarkMode(prefersDark);
-            }, []);
-
-            const calculation = useMemo(() => {
-                const fileSizeNum = parseFloat(fileSize);
-                const speedNum = parseFloat(speed);
-
-                if (!fileSizeNum || !speedNum || fileSizeNum <= 0 || speedNum <= 0) {
-                    return null;
-                }
-
-                const fileSizeBytes = fileSizeNum * (FILE_SIZE_UNITS[fileSizeUnit] || 1);
-                let speedBytesPerSec = speedNum * (SPEED_UNITS[speedUnit] || 1);
-
-                // Overhead anwenden
-                const profile = OVERHEAD_PROFILES.find(p => p.key === overheadProfile) || OVERHEAD_PROFILES[0];
-                const overheadFactor = 1 - (profile.percent / 100);
-                speedBytesPerSec *= overheadFactor;
-
-                const secondsTotal = fileSizeBytes / speedBytesPerSec;
-                const formattedTime = formatTime(secondsTotal);
-                const finishTime = getFinishTime(secondsTotal);
-                const mbPerSec = speedBytesPerSec / (1024 ** 2);
-
-                return {
-                    seconds: secondsTotal,
-                    formatted: formattedTime,
-                    finishTime,
-                    mbPerSec,
-                    overheadPercent: profile.percent,
-                    overheadLabel: profile.label,
-                };
-            }, [fileSize, fileSizeUnit, speed, speedUnit, overheadProfile]);
-
-            const handlePreset = (preset) => {
-                setFileSize(preset.size.toString());
-                setFileSizeUnit(preset.unit);
-            };
-
-            const progressPercent = useMemo(() => {
-                if (!calculation) return 0;
-                const maxSeconds = 86400; // 24 hours for scale
-                return Math.min((calculation.seconds / maxSeconds) * 100, 100);
-            }, [calculation]);
-
-            return (
-                <div className="page-wrapper">
-                    <div className="container">
-                        {/* Header */}
-                        <div className="header">
-                            <h1 className="page-title">
-                                Download Calculator
-                            </h1>
-                            <p className="page-subtitle">
-                                Berechne die exakte Download-Zeit in Echtzeit
-                            </p>
-                        </div>
-
-                        {/* Main Card */}
-                        <div className="main-card">
-                            {/* Overhead Dropdown */}
-                            <div className="overhead-section">
-                                <div className="overhead-row">
-                                    <div className="overhead-left">
-                                        <div className="overhead-title-row">
-                                            <h3 className="overhead-title">
-                                                Reale Bedingungen
-                                            </h3>
-                                            <button
-                                                onClick={() => setShowOverheadInfo(!showOverheadInfo)}
-                                                className="info-btn"
-                                                aria-label="Info zum Protokoll-Overhead"
-                                            >
-                                                <svg className="info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <p className="overhead-subtitle">
-                                            Protokoll-Overhead berücksichtigen
-                                        </p>
-                                    </div>
-                                    <div className="overhead-select-wrap">
-                                        <select
-                                            value={overheadProfile}
-                                            onChange={(e) => setOverheadProfile(e.target.value)}
-                                            className="select-base select-full"
-                                            aria-label="Overhead-Profil"
-                                        >
-                                            {OVERHEAD_PROFILES.map(p => (
-                                                <option key={p.key} value={p.key}>{p.label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                {/* Info-Box mit Erklärung */}
-                                {showOverheadInfo && (
-                                    <div className="info-box">
-                                        <h4 className="info-box-title">
-                                            📡 Was ist Protokoll-Overhead?
-                                        </h4>
-                                        <p className="info-box-text">
-                                            Bei jeder Datenübertragung werden zusätzlich zur eigentlichen Datei auch Verwaltungsinformationen (Header, Prüfsummen, Bestätigungen) übertragen. Dieser "Overhead" reduziert die effektive Geschwindigkeit.
-                                        </p>
-                                        <div className="info-box-list">
-                                            <p>• <strong>HTTP/FTP:</strong> Geringe Overheads (~7-8%) durch einfache Protokolle</p>
-                                            <p>• <strong>HTTPS/TLS:</strong> Verschlüsselung erhöht Overhead (~12%)</p>
-                                            <p>• <strong>SMB/CIFS:</strong> Netzwerk-Dateisysteme haben höhere Overheads (~20%)</p>
-                                            <p>• <strong>VPN/SFTP:</strong> Verschlüsselter Tunnel = mehr Overhead (~14-15%)</p>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {calculation && (
-                                    <p className="active-profile">
-                                        Aktives Profil: {calculation.overheadLabel} (−{calculation.overheadPercent}% Geschwindigkeit)
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Input Group 1: File Size */}
-                            <div className="input-section">
-                                <label className="input-label">
-                                    Dateigröße
-                                </label>
-                                <div className="input-group">
-                                    <input
-                                        type="number"
-                                        placeholder="z.B. 20"
-                                        value={fileSize}
-                                        onChange={(e) => setFileSize(e.target.value)}
-                                        className="input-base"
-                                        min="0"
-                                        step="0.1"
-                                    />
-                                    <select
-                                        value={fileSizeUnit}
-                                        onChange={(e) => setFileSizeUnit(e.target.value)}
-                                        className="select-base"
-                                    >
-                                        {Object.keys(FILE_SIZE_UNITS).map((unit) => (
-                                            <option key={unit} value={unit}>
-                                                {unit}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Input Group 2: Speed */}
-                            <div className="input-section-lg">
-                                <label className="input-label">
-                                    Internetgeschwindigkeit
-                                </label>
-                                <div className="input-group">
-                                    <input
-                                        type="number"
-                                        placeholder="z.B. 50"
-                                        value={speed}
-                                        onChange={(e) => setSpeed(e.target.value)}
-                                        className="input-base"
-                                        min="0"
-                                        step="0.1"
-                                    />
-                                    <select
-                                        value={speedUnit}
-                                        onChange={(e) => setSpeedUnit(e.target.value)}
-                                        className="select-base"
-                                    >
-                                        {Object.keys(SPEED_UNITS).map((unit) => (
-                                            <option key={unit} value={unit}>
-                                                {unit}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Presets */}
-                            <div className="input-section-lg">
-                                <label className="input-label-lg">
-                                    Schnellwahl
-                                </label>
-                                <div className="presets-grid">
-                                    {PRESETS.map((preset, idx) => (
-                                        <button
-                                            key={idx}
-                                            onClick={() => handlePreset(preset)}
-                                            className="preset-btn"
-                                        >
-                                            <span className="preset-name">{preset.name}</span>
-                                            <span className="preset-size">
-                                                {preset.size}
-                                                {preset.unit}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Result */}
-                            {calculation ? (
-                                <div className="result-card">
-                                    <div className="result-grid">
-                                        <div>
-                                            <p className="result-label">
-                                                Download-Zeit
-                                            </p>
-                                            <p className="result-time">
-                                                {calculation.formatted}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="result-label">
-                                                Fertig am
-                                            </p>
-                                            <p className="finish-value">
-                                                {calculation.finishTime}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Progress Bar */}
-                                    <div className="progress-section">
-                                        <div className="speed-row">
-                                            <span className="speed-label">
-                                                Geschwindigkeit
-                                            </span>
-                                            <span className="speed-value">
-                                                {calculation.mbPerSec.toFixed(2)} MB/s
-                                            </span>
-                                        </div>
-                                        <div className="progress-bar-bg">
-                                            <div
-                                                className="progress-fill"
-                                                style={{ width: `${progressPercent}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="result-card result-card-centered">
-                                    <p className="empty-result-text">
-                                        Gib die Dateigröße und Internetgeschwindigkeit ein, um die Download-Zeit zu berechnen.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="footer">
-                            <p>
-                                💡 Tipp: Nutze "Reale Bedingungen" für genauere Vorhersagen
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            );
+        function appendOptions(select, values, selectedValue) {
+            values.forEach((value) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                option.selected = value === selectedValue;
+                select.appendChild(option);
+            });
         }
 
-        ReactDOM.render(<DownloadCalculator />, document.getElementById("root"));
+        appendOptions(els.fileSizeUnit, Object.keys(FILE_SIZE_UNITS), 'GB');
+        appendOptions(els.speedUnit, Object.keys(SPEED_UNITS), 'Mbit/s');
+        OVERHEAD_PROFILES.forEach((profile) => {
+            const option = document.createElement('option');
+            option.value = profile.key;
+            option.textContent = profile.label;
+            option.selected = profile.key === 'generic';
+            els.overheadProfile.appendChild(option);
+        });
+
+        PRESETS.forEach((preset) => {
+            const button = document.createElement('button');
+            const name = document.createElement('span');
+            const size = document.createElement('span');
+            button.type = 'button';
+            button.className = 'preset-btn';
+            name.className = 'preset-name';
+            size.className = 'preset-size';
+            name.textContent = preset.name;
+            size.textContent = `${preset.size}${preset.unit}`;
+            button.append(name, size);
+            button.addEventListener('click', () => {
+                els.fileSize.value = String(preset.size);
+                els.fileSizeUnit.value = preset.unit;
+                updateCalculation();
+            });
+            els.presetsGrid.appendChild(button);
+        });
+
+        function updateCalculation() {
+            const fileSizeNum = Number.parseFloat(els.fileSize.value);
+            const speedNum = Number.parseFloat(els.speed.value);
+            const profile = OVERHEAD_PROFILES.find((item) => item.key === els.overheadProfile.value) || OVERHEAD_PROFILES[0];
+            const fileSizeFactor = FILE_SIZE_UNITS[els.fileSizeUnit.value];
+            const speedFactor = SPEED_UNITS[els.speedUnit.value];
+            const valid = Number.isFinite(fileSizeNum) && fileSizeNum > 0 &&
+                Number.isFinite(speedNum) && speedNum > 0 && fileSizeFactor && speedFactor;
+
+            els.resultDetails.hidden = !valid;
+            els.emptyResult.hidden = valid;
+            els.activeProfile.hidden = !valid;
+            if (!valid) return;
+
+            const speedBytesPerSec = speedNum * speedFactor * (1 - profile.percent / 100);
+            const secondsTotal = fileSizeNum * fileSizeFactor / speedBytesPerSec;
+            const progressPercent = Math.min(secondsTotal / 86400 * 100, 100);
+
+            els.resultTime.textContent = formatTime(secondsTotal);
+            els.finishValue.textContent = getFinishTime(secondsTotal);
+            els.speedValue.textContent = `${(speedBytesPerSec / (1024 ** 2)).toFixed(2)} MB/s`;
+            els.activeProfile.textContent = `Aktives Profil: ${profile.label} (−${profile.percent}% Geschwindigkeit)`;
+            els.progressFill.style.width = `${progressPercent}%`;
+        }
+
+        [els.fileSize, els.fileSizeUnit, els.speed, els.speedUnit, els.overheadProfile]
+            .forEach((control) => control.addEventListener('input', updateCalculation));
+
+        els.overheadInfoBtn.addEventListener('click', () => {
+            const show = els.overheadInfo.hidden;
+            els.overheadInfo.hidden = !show;
+            els.overheadInfoBtn.setAttribute('aria-expanded', String(show));
+        });
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations()
