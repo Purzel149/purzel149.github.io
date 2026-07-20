@@ -2309,21 +2309,21 @@
         const flagSpan = document.createElement('span');
         flagSpan.className = 'search-flag';
         flagSpan.setAttribute('aria-hidden', 'true');
-        flagSpan.appendChild(createFlagElement(item.meta, 26));
+        flagSpan.innerHTML = getFlagHTML(item.meta, 26);
 
         const detailsDiv = document.createElement('div');
         detailsDiv.className = 'search-city-details';
 
-        const cityNameSpan = document.createElement('span');
-        cityNameSpan.className = 'search-city-name';
-        cityNameSpan.textContent = item.meta.city;
+        const citySpan = document.createElement('span');
+        citySpan.className = 'search-city-name';
+        citySpan.textContent = item.meta.city;
 
-        const countryNameSpan = document.createElement('span');
-        countryNameSpan.className = 'search-country-name';
-        countryNameSpan.textContent = `${displayCountryStr} (${item.tz})`;
+        const countrySpan = document.createElement('span');
+        countrySpan.className = 'search-country-name';
+        countrySpan.textContent = `${displayCountryStr} (${item.tz})`;
 
-        detailsDiv.appendChild(cityNameSpan);
-        detailsDiv.appendChild(countryNameSpan);
+        detailsDiv.appendChild(citySpan);
+        detailsDiv.appendChild(countrySpan);
 
         leftDiv.appendChild(flagSpan);
         leftDiv.appendChild(detailsDiv);
