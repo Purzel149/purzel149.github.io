@@ -2483,7 +2483,13 @@ Eva</textarea>
       rngHistory.unshift(val);
       if (rngHistory.length > 20) rngHistory.pop(); // Keep last 20
       
-      rngHistoryList.innerHTML = rngHistory.map(h => `<div class="rng-history-item">${h}</div>`).join('');
+      rngHistoryList.textContent = '';
+      rngHistory.forEach(h => {
+        const item = document.createElement('div');
+        item.className = 'rng-history-item';
+        item.textContent = h;
+        rngHistoryList.appendChild(item);
+      });
     }
 
     generateRngBtn.addEventListener('click', generateNumber);
