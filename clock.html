@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-lVgz7NE+1d6ylnNkHS8+u5jzqZvsNCt289TVgmC2Zv4='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://flagcdn.com data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-a3oRnsd1DsAetZsQHYi6FypiPeOUQEwIHyjUBoA5fjM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://flagcdn.com data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'; upgrade-insecure-requests">
   <title>World Clock Toolbox - Premium Clock Hub</title>
   
   <!-- Premium Fonts -->
@@ -1418,13 +1418,6 @@
       })[char]);
     }
 
-    function getFlagHTML(meta, width = 24) {
-      if (meta.cc) {
-        return `<img src="https://flagcdn.com/w40/${escapeHTML(meta.cc.toLowerCase())}.png" width="${width}" alt="${escapeHTML(meta.country)} flag" style="border-radius: 2px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.25);" loading="lazy" referrerpolicy="no-referrer">`;
-      }
-      return `<span style="font-size: ${width * 0.8}px; vertical-align: middle;">${escapeHTML(meta.flag || '🌐')}</span>`;
-    }
-
     function createFlagElement(meta, width = 24) {
       if (meta.cc) {
         const img = document.createElement('img');
@@ -2309,7 +2302,7 @@
         const flagSpan = document.createElement('span');
         flagSpan.className = 'search-flag';
         flagSpan.setAttribute('aria-hidden', 'true');
-        flagSpan.innerHTML = getFlagHTML(item.meta, 26);
+        flagSpan.appendChild(createFlagElement(item.meta, 26));
 
         const detailsDiv = document.createElement('div');
         detailsDiv.className = 'search-city-details';
