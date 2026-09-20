@@ -1664,6 +1664,11 @@ Eva</textarea>
   </div>
 
   <script>
+    function secureRandom() {
+      const array = new Uint32Array(1);
+      window.crypto.getRandomValues(array);
+      return array[0] / (0xffffffff + 1);
+    }
     /* ==========================================================================
        SOUND EFFECTS SYNTH ENGINE
        ========================================================================== */
@@ -1933,9 +1938,9 @@ Eva</textarea>
       spinBtn.disabled = true;
       wheelContainer.classList.add('spinning');
       
-      spinAngleStart = Math.random() * 10 + 15;
+      spinAngleStart = secureRandom() * 10 + 15;
       spinTime = 0;
-      spinTimeTotal = Math.random() * 3000 + 3500; // ~6-7 seconds
+      spinTimeTotal = secureRandom() * 3000 + 3500; // ~6-7 seconds
       
       rotateWheel();
     });
@@ -1945,7 +1950,7 @@ Eva</textarea>
     document.getElementById('wheel-shuffle-btn').addEventListener('click', () => {
       const list = getItems();
       for (let i = list.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(secureRandom() * (i + 1));
         [list[i], list[j]] = [list[j], list[i]];
       }
       wheelChoicesInput.value = list.join('\n');
@@ -2012,7 +2017,7 @@ Eva</textarea>
 
     function shuffleDeck(deck) {
       for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(secureRandom() * (i + 1));
         [deck[i], deck[j]] = [deck[j], deck[i]];
       }
       deckTrigger.classList.remove('shuffling');
@@ -2117,7 +2122,7 @@ Eva</textarea>
         5: [[31, 31], [69, 31], [50, 50], [31, 69], [69, 69]],
         6: [[31, 28], [69, 28], [31, 50], [69, 50], [31, 72], [69, 72]]
       };
-      const uniqueId = `die-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const uniqueId = `die-${Date.now()}-${secureRandom().toString(16).slice(2)}`;
       const pips = (pipPositions[val] || []).map(([cx, cy]) => `
         <circle cx="${cx}" cy="${cy}" r="7.4" fill="url(#${uniqueId}-pip)"/>
         <circle cx="${cx - 2.2}" cy="${cy - 2.4}" r="2.1" fill="#ffffff" opacity="0.22"/>
@@ -2155,7 +2160,7 @@ Eva</textarea>
     }
 
     function getD20DieMarkup(val) {
-      const uniqueId = `d20-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const uniqueId = `d20-${Date.now()}-${secureRandom().toString(16).slice(2)}`;
       return `
         <svg class="die-svg" viewBox="0 0 100 100" role="img" aria-label="Rolled ${val}">
           <defs>
@@ -2192,12 +2197,12 @@ Eva</textarea>
       for (let i = 0; i < count; i++) {
         const spark = document.createElement('div');
         spark.className = 'dice-spark';
-        spark.style.setProperty('--x', `${42 + Math.random() * 16}%`);
-        spark.style.setProperty('--y', `${48 + Math.random() * 18}%`);
-        spark.style.setProperty('--dx', `${Math.random() * 150 - 75}px`);
-        spark.style.setProperty('--dy', `${Math.random() * 100 - 70}px`);
-        spark.style.setProperty('--spark-color', colors[Math.floor(Math.random() * colors.length)]);
-        spark.style.animationDelay = `${Math.random() * 0.12}s`;
+        spark.style.setProperty('--x', `${42 + secureRandom() * 16}%`);
+        spark.style.setProperty('--y', `${48 + secureRandom() * 18}%`);
+        spark.style.setProperty('--dx', `${secureRandom() * 150 - 75}px`);
+        spark.style.setProperty('--dy', `${secureRandom() * 100 - 70}px`);
+        spark.style.setProperty('--spark-color', colors[Math.floor(secureRandom() * colors.length)]);
+        spark.style.animationDelay = `${secureRandom() * 0.12}s`;
         diceTray.appendChild(spark);
         spark.addEventListener('animationend', () => spark.remove());
       }
@@ -2214,8 +2219,8 @@ Eva</textarea>
 
       for (let i = 0; i < diceCount; i++) {
         const val = diceType === 'D6' 
-          ? Math.floor(Math.random() * 6) + 1
-          : Math.floor(Math.random() * 20) + 1;
+          ? Math.floor(secureRandom() * 6) + 1
+          : Math.floor(secureRandom() * 20) + 1;
         
         rolledValues.push(val);
         
@@ -2250,7 +2255,7 @@ Eva</textarea>
           die.classList.remove('shaking');
           die.classList.add('impact');
           // Add custom random rotation for visual realism
-          const randomRotation = Math.floor(Math.random() * 20) - 10;
+          const randomRotation = Math.floor(secureRandom() * 20) - 10;
           die.style.setProperty('--settle-rotate', `${randomRotation}deg`);
           die.style.transform = `rotateZ(${randomRotation}deg)`;
           setTimeout(() => die.classList.remove('impact'), 430);
@@ -2297,11 +2302,11 @@ Eva</textarea>
       isFlipping = true;
       flipCoinBtn.disabled = true;
       
-      const outcome = Math.random() < 0.5 ? 'heads' : 'tails';
+      const outcome = secureRandom() < 0.5 ? 'heads' : 'tails';
       
       // Calculate rotation (minimum 5 full spins + face selection)
       const additionalRotation = outcome === 'heads' ? 0 : 180;
-      const spinRotations = (Math.floor(Math.random() * 4) + 6) * 360; // 6 to 9 full spins
+      const spinRotations = (Math.floor(secureRandom() * 4) + 6) * 360; // 6 to 9 full spins
       currentDegree += spinRotations + additionalRotation;
       
       // Force rotation
@@ -2369,7 +2374,7 @@ Eva</textarea>
       playSound.dice();
       
       setTimeout(() => {
-        const randAnswer = eightBallAnswers[Math.floor(Math.random() * eightBallAnswers.length)];
+        const randAnswer = eightBallAnswers[Math.floor(secureRandom() * eightBallAnswers.length)];
         ballAnswerText.innerHTML = randAnswer.replace(/\n/g, '<br>');
         
         ballLogo.classList.add('hidden');
@@ -2423,11 +2428,11 @@ Eva</textarea>
       const ticker = setInterval(() => {
         if (count === 1) {
           rngResult.className = 'rng-number';
-          rngResult.textContent = Math.floor(Math.random() * range) + min;
+          rngResult.textContent = Math.floor(secureRandom() * range) + min;
         } else {
           rngResult.className = 'rng-number multiple';
           rngResult.innerHTML = Array.from({length: Math.min(count, 5)}, () => 
-            `<span class="rng-badge">${Math.floor(Math.random() * range) + min}</span>`
+            `<span class="rng-badge">${Math.floor(secureRandom() * range) + min}</span>`
           ).join('');
         }
         playSound.tick();
@@ -2447,12 +2452,12 @@ Eva</textarea>
       if (unique) {
         const pool = Array.from({length: range}, (_, i) => min + i);
         for (let i = 0; i < count; i++) {
-          const randomIndex = Math.floor(Math.random() * pool.length);
+          const randomIndex = Math.floor(secureRandom() * pool.length);
           results.push(pool.splice(randomIndex, 1)[0]);
         }
       } else {
         for (let i = 0; i < count; i++) {
-          results.push(Math.floor(Math.random() * range) + min);
+          results.push(Math.floor(secureRandom() * range) + min);
         }
       }
 
@@ -2514,11 +2519,11 @@ Eva</textarea>
       for (let i = 0; i < 40; i++) {
         const particle = document.createElement('div');
         particle.className = 'confetti-particle';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-        particle.style.animationDelay = Math.random() * 2 + 's';
-        particle.style.width = Math.random() * 8 + 6 + 'px';
-        particle.style.height = Math.random() * 14 + 6 + 'px';
+        particle.style.left = secureRandom() * 100 + '%';
+        particle.style.background = colors[Math.floor(secureRandom() * colors.length)];
+        particle.style.animationDelay = secureRandom() * 2 + 's';
+        particle.style.width = secureRandom() * 8 + 6 + 'px';
+        particle.style.height = secureRandom() * 14 + 6 + 'px';
         confettiContainer.appendChild(particle);
       }
     }
@@ -2536,7 +2541,7 @@ Eva</textarea>
       const maxTicks = 12;
       
       const ticker = setInterval(() => {
-        const tempName = entrants[Math.floor(Math.random() * entrants.length)];
+        const tempName = entrants[Math.floor(secureRandom() * entrants.length)];
         raffleWinnerName.textContent = tempName;
         raffleOverlay.classList.add('active');
         playSound.tick();
@@ -2546,7 +2551,7 @@ Eva</textarea>
           clearInterval(ticker);
           
           // Select actual winner
-          const finalIndex = Math.floor(Math.random() * entrants.length);
+          const finalIndex = Math.floor(secureRandom() * entrants.length);
           const winner = entrants[finalIndex];
           raffleWinnerName.textContent = winner;
           raffleWinnerName.classList.remove('result-pop');
