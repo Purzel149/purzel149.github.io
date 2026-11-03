@@ -1014,6 +1014,7 @@
       transform: translateX(-50%);
       text-transform: uppercase;
       word-wrap: break-word;
+      white-space: pre-wrap;
     }
 
     .ball-eight-logo {
@@ -2370,7 +2371,7 @@ Eva</textarea>
       
       setTimeout(() => {
         const randAnswer = eightBallAnswers[Math.floor(Math.random() * eightBallAnswers.length)];
-        ballAnswerText.innerHTML = randAnswer.replace(/\n/g, '<br>');
+        ballAnswerText.textContent = randAnswer;
         
         ballLogo.classList.add('hidden');
         ballTriangle.classList.add('revealed');
