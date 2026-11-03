@@ -2387,6 +2387,28 @@ Eva</textarea>
     /* ==========================================================================
        RANDOM NUMBER GENERATOR (RNG) LOGIC
        ========================================================================== */
+    function getSecureRandomInt(min, max) {
+      const range = max - min + 1;
+      const max_range = 4294967296; // 2^32
+
+      if (range > max_range) {
+        // Fallback for extremely large ranges
+        const array = new Uint32Array(2);
+        window.crypto.getRandomValues(array);
+        const randomFloat = (array[0] * 2**32 + array[1]) / 2**64;
+        return min + Math.floor(randomFloat * range);
+      }
+
+      const limit = max_range - (max_range % range);
+      const array = new Uint32Array(1);
+      let val;
+      do {
+        window.crypto.getRandomValues(array);
+        val = array[0];
+      } while (val >= limit);
+      return min + (val % range);
+    }
+
     const generateRngBtn = document.getElementById('generate-rng-btn');
     const rngMinInput = document.getElementById('rng-min');
     const rngMaxInput = document.getElementById('rng-max');
@@ -2423,11 +2445,11 @@ Eva</textarea>
       const ticker = setInterval(() => {
         if (count === 1) {
           rngResult.className = 'rng-number';
-          rngResult.textContent = Math.floor(Math.random() * range) + min;
+          rngResult.textContent = getSecureRandomInt(min, max);
         } else {
           rngResult.className = 'rng-number multiple';
           rngResult.innerHTML = Array.from({length: Math.min(count, 5)}, () => 
-            `<span class="rng-badge">${Math.floor(Math.random() * range) + min}</span>`
+            `<span class="rng-badge">${getSecureRandomInt(min, max)}</span>`
           ).join('');
         }
         playSound.tick();
@@ -2447,12 +2469,12 @@ Eva</textarea>
       if (unique) {
         const pool = Array.from({length: range}, (_, i) => min + i);
         for (let i = 0; i < count; i++) {
-          const randomIndex = Math.floor(Math.random() * pool.length);
+          const randomIndex = getSecureRandomInt(0, pool.length - 1);
           results.push(pool.splice(randomIndex, 1)[0]);
         }
       } else {
         for (let i = 0; i < count; i++) {
-          results.push(Math.floor(Math.random() * range) + min);
+          results.push(getSecureRandomInt(min, max));
         }
       }
 
