@@ -2546,7 +2546,9 @@ Eva</textarea>
           clearInterval(ticker);
           
           // Select actual winner
-          const finalIndex = Math.floor(Math.random() * entrants.length);
+          const randomBuffer = new Uint32Array(1);
+          window.crypto.getRandomValues(randomBuffer);
+          const finalIndex = randomBuffer[0] % entrants.length;
           const winner = entrants[finalIndex];
           raffleWinnerName.textContent = winner;
           raffleWinnerName.classList.remove('result-pop');
